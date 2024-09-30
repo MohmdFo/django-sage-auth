@@ -1,8 +1,11 @@
 # mixins.py
 
 from django import forms
-from .models import CustomUser
-from .utils import set_required_fields
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+
+from sage_auth.models import CustomUser
+from sage_auth.utils import set_required_fields
 from sage_auth.helpers.validators import CompanyEmailValidator
 
 class CustomUserFormMixin(forms.ModelForm):
@@ -68,6 +71,18 @@ class CustomUserFormMixin(forms.ModelForm):
         self.fields['password1'] = self.fields.pop('password1')
         self.fields['password2'] = self.fields.pop('password2')
 
+    def clean_password1(self):
+        """
+        Validate the password using Django's default password validators.
+        """
+        password = self.cleaned_data.get('password1')
+        if password:
+            try:
+                validate_password(password)
+            except ValidationError as e:
+                raise forms.ValidationError(e)
+        return password
+
     def clean(self):
         """Validate that the required fields have been filled correctly and passwords match."""
         cleaned_data = super().clean()
@@ -118,5 +133,8 @@ class CustomUserCreationForm(CustomUserFormMixin):
         super().__init__(*args, **kwargs)
         
         # Customize the placeholder for the password fields
-        self.fields['password1'].widget.attrs.update({'placeholder': 'Enter the pass'})
-        self.fields['password2'].widget.attrs.update({'placeholder': 'Confirm the pass'})
+        # self.fields['password1'].widget.attrs.update({'placeholder': 'Enter the pass'})
+        # self.fields['password2'].widget.attrs.update({'placeholder': 'Confirm the pass'})
+
+
+        

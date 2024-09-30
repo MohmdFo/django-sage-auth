@@ -1,7 +1,7 @@
 # urls.py
 from django.urls import path
 from django.contrib.auth.views import LoginView, LogoutView
-from .views import SignUpView,HomeV
+from .views import SignUpView,HomeV,OtpVerificationView
 
 urlpatterns = [
     # Django's built-in LoginView
@@ -10,4 +10,5 @@ urlpatterns = [
     # Django's built-in LogoutView
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
     path('home/', HomeV.as_view(), name='home'),
+    path('verify/',OtpVerificationView.as_view(), name='verify'),
 ]

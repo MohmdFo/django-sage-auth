@@ -18,6 +18,8 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.10"
 django = "^5.1.1"
+django-sage-otp = "^0.1.0"
+django-ratelimit = "^4.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
