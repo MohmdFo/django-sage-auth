@@ -1,13 +1,8 @@
 # Contributors
 
-We would like to thank the following people for their contributions to the `django-sage-invoice` project:
+We would like to thank the following people for their contributions to the `django-sage-auth` project:
 
 ## Core Contributors
-
-- **Mohammad Fotouhi**
-  - GitHub: [MohmdFo](https://github.com/MohmdFo/)
-  - Email: mohammad@sageteam.org
-  - Contributions: Project creator and lead maintainer.
 
 ---
 
