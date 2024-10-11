@@ -1,21 +1,25 @@
 import re
+
 from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
+
 
 @deconstructible
 class ValidatorE164:
     """Custom phone number validator supporting multiple formats."""
 
-    message = _("Invalid phone number format. Must be one of the following: 09xxxxxxxxx, +98xxxxxxxxx, or 0098xxxxxxxxx.")
+    message = _(
+        "Invalid phone number format. Must be one of the following: 09xxxxxxxxx, +98xxxxxxxxx, or 0098xxxxxxxxx."
+    )
     code = "invalid"
-    
+
     # Regex pattern to support:
     # 1. Local format starting with 09
     # 2. International format with +98
     # 3. International format with 00 and country code
     regex = re.compile(r"^(?:\+98|00?98|0)?9\d{9}$")
-    
+
     def __init__(self, message=None, code=None):
         """Initializes the ValidatorE164 with optional custom message and code.
 
@@ -54,5 +58,6 @@ class ValidatorE164:
             and self.message == other.message
             and self.code == other.code
         )
+
 
 validate_phone_number = ValidatorE164()

@@ -1,10 +1,9 @@
-from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+
 from .base import AuthStrategy
-from django.core.validators import validate_email
+
 
 class EmailStrategy(AuthStrategy):
-
     def validate(self, user_data):
         # email = user_data.get('email')
         # if not email:
@@ -23,15 +22,13 @@ class EmailStrategy(AuthStrategy):
             User = get_user_model()
             user = User()
 
-        user.email = user_data['email']
-        user.is_staff = user_data.get('is_staff',False)
-        user.is_superuser = user_data.get('is_superuser',False)
-        password = user_data.get('password')
+        user.email = user_data["email"]
+        user.is_staff = user_data.get("is_staff", False)
+        user.is_superuser = user_data.get("is_superuser", False)
+        password = user_data.get("password")
         if password:
             user.set_password(password)
 
         user.save()
         print("User created")
         return user
-
- 
