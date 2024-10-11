@@ -1,0 +1,66 @@
+<!-- your_app/templates/email_verification_template.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+            margin: 20px auto;
+        }
+
+        .header {
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+        }
+
+        .verification-code {
+            font-size: 24px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="header">Email Verification</h2>
+        <p class="message">Hi there! Welcome to our Drug Labs</p>
+        <p>Your verification code is: <span class="verification-code">{{ verification_code }}</span></p>
+    </div>
+</body>
+</html>

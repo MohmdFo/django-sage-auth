@@ -1,24 +1,41 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+
+requires = [ "poetry-core" ]
+
 [tool.poetry]
 name = "django-sage-auth"
 version = "0.1.0"
-description = ""
-authors = ["MohmdFo <mohammad.fotouhi80@gmail.com>"]
+description = "A project for handleing authentication processes"
+authors = [ "Radin Ghahremani <radin@sageteam.org>", "Sepehr Akbarzadeh <sepehr@sageteam.org>" ]
+keywords = [ "django", "auth", "sageteam", "django-packages" ]
+license = "MIT"
+repository = "https://github.com/sageteamorg/django-sage-auth"
 readme = "README.md"
 
 packages = [
-  { include = "sage_invoice" },
+  { include = "sage_auth" },
 ]
 
 classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Framework :: Django",
+  "Development Status :: 4 - Beta",
+
 ]
+[tool.poetry.urls]
+"Documentation" = "https://django-sage-auth.readthedocs.io/en/latest/"
+"Source Code" = "https://github.com/sageteamorg/django-sage-auth"
+"Issues" = "https://github.com/sageteamorg/django-sage-auth/issues"
 
 [tool.poetry.dependencies]
 python = "^3.10"
 django = "^5.1.1"
-
+django-sage-otp = "^0.1.0"
+django-ratelimit = "^4.1.0"
+python-sage-sms = "^0.1.1"
+six = "^1.16.0"
 
 [tool.poetry.group.dev.dependencies]
 bandit = { extras = [ "toml" ], version = "^1.7.9" }
@@ -36,10 +53,6 @@ isort = "^5.13.2"
 pylint-django = "^2.5.5"
 django-debug-toolbar = "^4.4.6"
 sphinx = "^8.0.2"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 88
@@ -231,4 +244,3 @@ exclude_tests = [ "B301", "B302" ]
 
 [tool.bandit.plugins]
 B104 = { check_typed_list = true }
-
