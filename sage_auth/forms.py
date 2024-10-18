@@ -133,19 +133,6 @@ class SageUserFormMixin(forms.ModelForm):
         return user
 
 
-class SageUserCreationForm(SageUserFormMixin):
-    """Custom form for user creation that extends the SageUserFormMixin."""
-
-    def __init__(self, *args, **kwargs):
-        """Customize the form fields, attributes, and validators."""
-        super().__init__(*args, **kwargs)
-
-        self.fields["password1"].widget.attrs.update({"placeholder": "Enter the pass"})
-        self.fields["password2"].widget.attrs.update(
-            {"placeholder": "Confirm the pass"}
-        )
-
-
 class PasswordResetFormMixin(forms.Form):
     username_field, required_fields = set_required_fields()
     IDENTIFIER_FIELD_LABEL = None
@@ -202,13 +189,7 @@ class OtpLoginFormMixin(forms.Form):
     )
 
 
-class PasswordResetForm(PasswordResetFormMixin):
-    def __init__(self, *args, **kwargs):
-        """Customize the form fields, attributes, and validators."""
-        super().__init__(*args, **kwargs)
-
-
-class ResetPasswordConfrimForm(SetPasswordForm):
+class ResetPasswordConfrimFormMixin(SetPasswordForm):
     class Meta:
         model = SageUser
 

@@ -8,7 +8,6 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, TemplateView
 from sage_otp.helpers.choices import ReasonOptions
 
-from sage_auth.forms import PasswordResetForm, ResetPasswordConfrimForm
 from sage_auth.mixins import EmailMixin, VerifyOtpMixin
 from sage_auth.mixins.phone import PhoneOtpMixin
 from sage_auth.utils import set_required_fields
@@ -25,7 +24,7 @@ class ForgetPasswordMixin(FormView, EmailMixin):
     """
 
     template_name = None
-    form_class = PasswordResetForm
+    form_class = None
 
     def form_valid(self, form):
         """Handle form validation, retrieve the user, and send OTP based on the
@@ -86,7 +85,7 @@ class ForgetPasswordDoneMixin(FormView):
     template_name = None
     page_name = "Password reset sent"
     success_url = None
-    form_class = ResetPasswordConfrimForm
+    form_class = None
 
     def dispatch(self, request, *args, **kwargs):
         if not request.session.get("changing_password"):
