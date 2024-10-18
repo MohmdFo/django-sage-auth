@@ -17,6 +17,7 @@ class UserCreationMixin(CreateView, EmailMixin):
     form_class = None
     template_name = None
     email = None
+    already_login_url = None
 
     def form_valid(self, form):
         """Handle form validation, save the user, and log them in."""
@@ -69,5 +70,5 @@ class UserCreationMixin(CreateView, EmailMixin):
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             messages.info(request, "You are already logged in.")
-            return redirect("home")
+            return redirect(self.already_login_url)
         return super().get(request, *args, **kwargs)

@@ -86,13 +86,14 @@ class ForgetPasswordDoneMixin(FormView):
     page_name = "Password reset sent"
     success_url = None
     form_class = None
+    login_url = None
 
     def dispatch(self, request, *args, **kwargs):
         if not request.session.get("changing_password"):
             logger.warning(
                 "Attempt to access password reset confirm view without changing password."
             )
-            return redirect("login", permanent=False)
+            return redirect(self.login_url, permanent=False)
         return super().dispatch(request, *args, **kwargs)
 
     def get_form(self, form_class=None):

@@ -79,6 +79,7 @@ class LoginOtpVerifyMixin(VerifyOtpMixin, TemplateView):
 class SageLoginMixin(LoginView):
     template_name = None
     success_url = None
+    reactivate_url = None
 
     def form_invalid(self, form):
         identifier = form.cleaned_data.get("username")
@@ -100,7 +101,7 @@ class SageLoginMixin(LoginView):
                     "Your account is not activated. Please check your phone number or email",
                 )
                 self.request.session["email"] = identifier
-                return redirect("reactivate")
+                return redirect(self.reactivate_url)
         else:
             return super().form_invalid(form)
 
