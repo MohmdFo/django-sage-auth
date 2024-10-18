@@ -1,15 +1,17 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from phonenumber_field.formfields import PhoneNumberField
 
 from sage_auth.helpers.validators import CompanyEmailValidator
-from sage_auth.models import CustomUser
+from sage_auth.models import SageUser
 from sage_auth.utils import set_required_fields
 
 
-class CustomUserFormMixin(forms.ModelForm):
+class SageUserFormMixin(forms.ModelForm):
     """
     A mixin that handles dynamic field generation and validation
     based on authentication strategies.
@@ -27,7 +29,7 @@ class CustomUserFormMixin(forms.ModelForm):
     )
 
     class Meta:
-        model = CustomUser
+        model = SageUser
         fields = []
 
     def __init__(self, *args, **kwargs):
@@ -42,7 +44,8 @@ class CustomUserFormMixin(forms.ModelForm):
             self.fields["email"].validators.append(CompanyEmailValidator())
 
         elif username_field == "phone_number":
-            self.fields["phone_number"] = forms.CharField(
+            self.fields["phone_number"] = PhoneNumberField(
+                region=getattr(settings, "DEFAULT_REGION", "IR"),
                 required=True,
                 widget=forms.TextInput(attrs={"placeholder": "Phone Number"}),
             )
@@ -66,7 +69,8 @@ class CustomUserFormMixin(forms.ModelForm):
                     widget=forms.TextInput(attrs={"placeholder": "Username"}),
                 )
             if field == "phone_number" and "phone_number" not in self.fields:
-                self.fields["phone_number"] = forms.CharField(
+                self.fields["phone_number"] = PhoneNumberField(
+                    region=getattr(settings, "DEFAULT_REGION", "CA"),
                     required=True,
                     widget=forms.TextInput(attrs={"placeholder": "Phone Number"}),
                 )
@@ -101,7 +105,6 @@ class CustomUserFormMixin(forms.ModelForm):
                 "You must provide at least one identifier: email, phone number, or username."
             )
 
-        # Check if passwords match
         password1 = cleaned_data.get("password1")
         password2 = cleaned_data.get("password2")
 
@@ -124,14 +127,14 @@ class CustomUserFormMixin(forms.ModelForm):
         user_data = self.get_user_data()
 
         # Determine the strategy using your custom UserManager logic
-        strategy = CustomUser.objects.get_authentication_strategies(user_data)
+        strategy = SageUser.objects.get_authentication_strategies(user_data)
         user = strategy.create_user(user_data)
 
         return user
 
 
-class CustomUserCreationForm(CustomUserFormMixin):
-    """Custom form for user creation that extends the CustomUserFormMixin."""
+class SageUserCreationForm(SageUserFormMixin):
+    """Custom form for user creation that extends the SageUserFormMixin."""
 
     def __init__(self, *args, **kwargs):
         """Customize the form fields, attributes, and validators."""
@@ -145,6 +148,7 @@ class CustomUserCreationForm(CustomUserFormMixin):
 
 class PasswordResetFormMixin(forms.Form):
     username_field, required_fields = set_required_fields()
+    IDENTIFIER_FIELD_LABEL = None
     if username_field == "email" or username_field == "phone_number":
         IDENTIFIER_FIELD_LABEL = username_field
 
@@ -156,7 +160,42 @@ class PasswordResetFormMixin(forms.Form):
             elif field == "phone_number":
                 IDENTIFIER_FIELD_LABEL = "PhoneNumber"
 
-    identifier = forms.CharField(
+    if IDENTIFIER_FIELD_LABEL == "Phone Number":
+        identifier = PhoneNumberField(
+            label=_(IDENTIFIER_FIELD_LABEL),
+            region=getattr(settings, "DEFAULT_REGION", "IR"),
+            widget=forms.TextInput(attrs={"placeholder": _("Phone Number")}),
+        )
+    else:
+        identifier = forms.CharField(
+            max_length=254,
+            label=_(IDENTIFIER_FIELD_LABEL),
+            widget=forms.TextInput(attrs={"placeholder": _(IDENTIFIER_FIELD_LABEL)}),
+        )
+
+
+class OtpLoginFormMixin(forms.Form):
+    username_field, required_fields = set_required_fields()
+    IDENTIFIER_FIELD_LABEL = None
+    if username_field == "email" or username_field == "phone_number":
+        IDENTIFIER_FIELD_LABEL = username_field
+
+    else:
+        for field in required_fields:
+            if field == "email":
+                IDENTIFIER_FIELD_LABEL = "Email"
+                break
+            elif field == "phone_number":
+                IDENTIFIER_FIELD_LABEL = "PhoneNumber"
+
+    if IDENTIFIER_FIELD_LABEL == "Phone Number":
+        login_field = PhoneNumberField(
+            label=_(IDENTIFIER_FIELD_LABEL),
+            region=getattr(settings, "DEFAULT_REGION", "IR"),
+            widget=forms.TextInput(attrs={"placeholder": _("Phone Number")}),
+        )
+
+    login_field = forms.CharField(
         max_length=254,
         label=_(IDENTIFIER_FIELD_LABEL),
         widget=forms.TextInput(attrs={"placeholder": _(IDENTIFIER_FIELD_LABEL)}),
@@ -171,7 +210,7 @@ class PasswordResetForm(PasswordResetFormMixin):
 
 class ResetPasswordConfrimForm(SetPasswordForm):
     class Meta:
-        model = CustomUser
+        model = SageUser
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

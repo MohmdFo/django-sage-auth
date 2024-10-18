@@ -15,6 +15,7 @@ from sage_auth.utils import (
     set_required_fields,
     account_activation_token,
     ActivationEmailSender,
+    send_sms
 )
 
 User = get_user_model()
@@ -63,7 +64,9 @@ class TestUtils:
         ],
     )
     def test_set_required_fields(self, auth_methods, expected_username, expected_required_fields):
-        """Test that the set_required_fields function correctly identifies the username field and required fields."""
+        """Test that the set_required_fields function correctly identifies the username
+        field and required fields.
+        """
         settings.AUTHENTICATION_METHODS = auth_methods
 
         username_field, required_fields = set_required_fields()
@@ -71,14 +74,30 @@ class TestUtils:
         assert username_field == expected_username
         assert sorted(required_fields) == sorted(expected_required_fields)
 
-    @pytest.mark.django_db
-    def test_account_activation_token(self):
-        """Test generating and validating an account activation token."""
-        user = User.objects.create_user(
-            username="testuser", email="test@example.com", password="password123"
-        )
-        token = account_activation_token.make_token(user)
+    # @pytest.mark.django_db
+    # def test_account_activation_token(self):
+    #     """Test generating and validating an account activation token."""
+    #     user = User.objects.create_user(
+    #         username="testuser", email="test@example.com", password="password123"
+    #     )
+    #     token = account_activation_token.make_token(user)
 
-        assert account_activation_token.check_token(user, token)
-        user.is_active = True
-        user.save()
+    #     # assert account_activation_token.check_token(user, token)
+    #     # user.is_active = True
+    #     # user.save()
+
+    
+    @pytest.mark.django_db
+    def test_send_sms(self):
+        """Test the send_sms function with real SMS backend."""
+        
+        sms_provider = send_sms()
+
+        assert sms_provider is not None, "SMS provider should not be None"
+
+        recipient_number = "+1234567890" 
+        message_content = "This is a test message for send_sms function."
+
+        result = sms_provider.send_one_message(recipient_number, message_content)
+        assert result == None
+

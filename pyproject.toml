@@ -36,6 +36,8 @@ django-sage-otp = "^0.1.0"
 django-ratelimit = "^4.1.0"
 python-sage-sms = "^0.1.1"
 six = "^1.16.0"
+smsir = "^1.0.5"
+django-phonenumber-field = { extras = [ "phonenumbers" ], version = "^8.0.0" }
 
 [tool.poetry.group.dev.dependencies]
 bandit = { extras = [ "toml" ], version = "^1.7.9" }
@@ -53,6 +55,7 @@ isort = "^5.13.2"
 pylint-django = "^2.5.5"
 django-debug-toolbar = "^4.4.6"
 sphinx = "^8.0.2"
+sphinx-rtd-theme = "^3.0.1"
 
 [tool.black]
 line-length = 88
@@ -186,6 +189,7 @@ norecursedirs = [
   "dist",
   "build",
   "kernel",
+  "checks.py",
 ]
 
 [tool.coverage.run]
@@ -194,6 +198,7 @@ omit = [
   "kernel/*",
   "*/apps.py",
   "manage.py",
+  "checks.py",
 ]
 
 [tool.coverage.report]

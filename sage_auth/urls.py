@@ -9,6 +9,8 @@ from .views import (
     ForgetPasswordOTPConfirmView,
     ForgetPasswordView,
     HomeV,
+    LoginConfrimView,
+    LoginWithOtpView,
     OtpVerificationView,
     ReactivateUserView,
     SignUpView,
@@ -33,4 +35,14 @@ urlpatterns = [
     ),
     path("activate/<uidb64>/<token>/", ActivateAccountView.as_view(), name="activate"),
     path("reactivate/", ReactivateUserView.as_view(), name="reactivate"),
+    path(
+        "login_verify/",
+        LoginConfrimView.as_view(),
+        name="login_v",
+    ),
+    path(
+        "login_otp/",
+        LoginWithOtpView.as_view(),
+        name="login_otp",
+    ),
 ]

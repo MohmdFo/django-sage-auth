@@ -10,6 +10,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from sage_sms.factory import SMSBackendFactory
 
 
 def otpCreate():
@@ -94,5 +95,11 @@ class ActivationEmailSender:
                 "activation_url": activation_url,
             },
         )
-
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+
+
+def send_sms():
+    factory = SMSBackendFactory(settings.SMS_CONFIGS, "sage_auth.backends")
+    sms_provider_class = factory.get_backend()
+    sms_provider = sms_provider_class(settings)
+    return sms_provider

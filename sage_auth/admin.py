@@ -2,11 +2,11 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 
-from .models import CustomUser
+from .models import SageUser
 from .utils import set_required_fields
 
 
-class CustomUserAdmin(UserAdmin):
+class SageUserAdmin(UserAdmin):
     """Custom admin to display fields dynamically based on authentication strategy."""
 
     username_field, required_fields = set_required_fields()
@@ -45,4 +45,4 @@ class CustomUserAdmin(UserAdmin):
     ordering = [username_field]
 
 
-admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(SageUser, SageUserAdmin)
