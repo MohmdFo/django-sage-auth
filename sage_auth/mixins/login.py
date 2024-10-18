@@ -2,18 +2,17 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model,login
+from django.contrib.auth import get_user_model, login
+from django.contrib.auth.views import LoginView
 from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, TemplateView
-from django.contrib.auth.views import LoginView
-
 from sage_otp.helpers.choices import ReasonOptions
-from sage_auth.utils import set_required_fields
-from sage_auth.forms import OtpLoginFormMixin
+
 from sage_auth.mixins.email import EmailMixin
 from sage_auth.mixins.otp import VerifyOtpMixin
 from sage_auth.mixins.phone import PhoneOtpMixin
+from sage_auth.utils import set_required_fields
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +26,7 @@ class LoginOtpMixin(FormView, EmailMixin):
     """
 
     template_name = None
-    form_class = OtpLoginFormMixin
+    form_class = None
 
     def form_valid(self, form):
         """Handle form validation, retrieve the user, and send OTP based on the
@@ -62,8 +61,11 @@ class LoginOtpMixin(FormView, EmailMixin):
 
         if settings.AUTHENTICATION_METHODS.get("PHONE_PASSWORD"):
             sms_obj = PhoneOtpMixin()
-            messages.info(self.request, f"OTP sent to your phone number: {user.phone_number}")
-            return sms_obj.send_sms_otp(user,ReasonOptions.LOGIN)
+            messages.info(
+                self.request, f"OTP sent to your phone number: {user.phone_number}"
+            )
+            return sms_obj.send_sms_otp(user, ReasonOptions.LOGIN)
+
 
 class LoginOtpVerifyMixin(VerifyOtpMixin, TemplateView):
     template_name = "None"
@@ -74,9 +76,8 @@ class LoginOtpVerifyMixin(VerifyOtpMixin, TemplateView):
         return super().post(request, *args, **kwargs)
 
 
-
 class SageLoginMixin(LoginView):
-    template_name= None
+    template_name = None
     success_url = None
 
     def form_invalid(self, form):
@@ -102,6 +103,6 @@ class SageLoginMixin(LoginView):
                 return redirect("reactivate")
         else:
             return super().form_invalid(form)
-    
+
     def get_success_url(self):
         return self.success_url
