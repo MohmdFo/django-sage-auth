@@ -5,7 +5,6 @@ from django.shortcuts import redirect
 from django.views.generic import CreateView
 from sage_otp.helpers.choices import ReasonOptions
 
-from sage_auth.forms import SageUserCreationForm
 from sage_auth.mixins.email import EmailMixin
 from sage_auth.mixins.phone import PhoneOtpMixin
 from sage_auth.utils import ActivationEmailSender, set_required_fields
@@ -15,7 +14,7 @@ class UserCreationMixin(CreateView, EmailMixin):
     """A mixin that handles user creation and login using a strategy-based form."""
 
     success_url = None
-    form_class = SageUserCreationForm
+    form_class = None
     template_name = None
     email = None
 
