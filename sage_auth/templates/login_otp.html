@@ -1,0 +1,9 @@
+<!-- signup.html -->
+{% block content %}
+  <h2>Login with phone number </h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Submit</button>
+  </form>
+{% endblock %}

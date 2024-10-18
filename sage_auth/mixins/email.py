@@ -14,16 +14,10 @@ class EmailMixin:
         """Send OTP to the user's email."""
         send_email_otp(otp, email)
 
-    def handle_otp(self, user, kind=0):
+    def handle_otp(self, user, reason):
         """Generate and send OTP if email is the USERNAME_FIELD."""
-        if kind != 0:
-            otp_data = self.otp_manager.get_or_create_otp(
-                identifier=user.id, reason=ReasonOptions.FORGET_PASSWORD
-            )
-        else:
-            otp_data = self.otp_manager.get_or_create_otp(
-                identifier=user.id, reason=ReasonOptions.EMAIL_ACTIVATION
-            )
+
+        otp_data = self.otp_manager.get_or_create_otp(identifier=user.id, reason=reason)
 
         self.send_otp(otp_data[0].token, user.email)
         messages.info(
@@ -31,8 +25,7 @@ class EmailMixin:
         )
         return user.email
 
-    def form_valid(self, user, kind=0):
+    def form_valid(self, user, reason=ReasonOptions.EMAIL_ACTIVATION):
         """Handle OTP logic after the user is created."""
-
-        email = self.handle_otp(user, kind)
+        email = self.handle_otp(user, reason)
         return email

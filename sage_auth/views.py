@@ -1,7 +1,6 @@
 from django.contrib import messages
-from django.contrib.auth import get_user_model, login
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LoginView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.encoding import force_str
@@ -9,22 +8,24 @@ from django.utils.http import urlsafe_base64_decode
 from django.views.generic import TemplateView, View
 from sage_otp.helpers.choices import ReasonOptions
 
-from sage_auth.forms import CustomUserCreationForm, PasswordResetForm
+from sage_auth.forms import PasswordResetForm, SageUserCreationForm
 from sage_auth.mixins import (
     ForgetPasswordConfirmMixin,
     ForgetPasswordDoneMixin,
     ForgetPasswordMixin,
+    LoginOtpMixin,
+    LoginOtpVerifyMixin,
     ReactivationMixin,
+    SageLoginMixin,
     UserCreationMixin,
     VerifyOtpMixin,
 )
-from sage_auth.utils import set_required_fields
 
 User = get_user_model()
 
 
 class SignUpView(UserCreationMixin):
-    form_class = CustomUserCreationForm
+    form_class = SageUserCreationForm
     template_name = "signup.html"
     success_url = reverse_lazy("verify")
 
@@ -94,32 +95,20 @@ class ActivateAccountView(View):
             return redirect("register")
 
 
-class CustomLoginView(LoginView):
-    def form_invalid(self, form):
-        identifier = form.cleaned_data.get("username")
-
-        username_field, _ = set_required_fields()
-
-        try:
-            user = User.objects.get(**{username_field: identifier})
-        except User.DoesNotExist:
-            user = None
-
-        if user is not None:
-            if user.is_active:
-                login(self.request, user)
-                return redirect(self.get_success_url())
-            else:
-                messages.error(
-                    self.request,
-                    "Your account is not activated. Please check your email for the activation link.",
-                )
-                self.request.session["email"] = identifier
-                return redirect("reactivate")
-        else:
-            return super().form_invalid(form)
+class CustomLoginView(SageLoginMixin):
+    success_url = reverse_lazy("home")
 
 
 class ReactivateUserView(ReactivationMixin):
     success_url = reverse_lazy("home")
     template_name = "reactivate.html"
+
+
+class LoginWithOtpView(LoginOtpMixin):
+    template_name = "login_otp.html"
+    success_url = reverse_lazy("login_v")
+
+
+class LoginConfrimView(LoginOtpVerifyMixin):
+    template_name = "verify_login.html"
+    success_url = reverse_lazy("home")

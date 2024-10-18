@@ -3,15 +3,19 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.generic import CreateView
+from sage_otp.helpers.choices import ReasonOptions
 
+from sage_auth.forms import SageUserCreationForm
 from sage_auth.mixins.email import EmailMixin
+from sage_auth.mixins.phone import PhoneOtpMixin
 from sage_auth.utils import ActivationEmailSender, set_required_fields
+
 
 class UserCreationMixin(CreateView, EmailMixin):
     """A mixin that handles user creation and login using a strategy-based form."""
 
     success_url = None
-    form_class = None
+    form_class = SageUserCreationForm
     template_name = None
     email = None
 
@@ -21,10 +25,10 @@ class UserCreationMixin(CreateView, EmailMixin):
         form.instance.id = user.id
         user.is_active = False
         user.save()
-
         if settings.SEND_OTP:
             self.email = self.send_otp_based_on_strategy(user)
             self.request.session["email"] = self.email
+            self.request.session["spa"] = True
             self.request.session.save()
 
         elif settings.USER_ACCOUNT_ACTIVATION_ENABLED:
@@ -45,17 +49,13 @@ class UserCreationMixin(CreateView, EmailMixin):
 
         if settings.AUTHENTICATION_METHODS.get("EMAIL_PASSWORD"):
             return EmailMixin.form_valid(self, user)
-
         if settings.AUTHENTICATION_METHODS.get("PHONE_PASSWORD"):
-            self.send_otp_sms(user.phone_number)
-
-        # if settings.AUTHENTICATION_METHODS.get('EMAIL_PASSWORD') and settings.AUTHENTICATION_METHODS.get('PHONE_PASSWORD'):
-        #     EmailMixin.form_valid(self, form)
-        #     self.send_otp_sms(user.phone_number)
-
-    def send_otp_sms(self, phone_number):
-        """Send OTP to the user's phone (Placeholder for SMS logic)."""
-        pass
+            sms_obj = PhoneOtpMixin()
+            self.request.session["reason"] = ReasonOptions.PHONE_NUMBER_ACTIVATION
+            messages.info(
+                self.request, f"OTP sent to your phone number: {user.phone_number}"
+            )
+            return sms_obj.send_sms_otp(user)
 
     def form_invalid(self, form):
         """Handle invalid form submissions."""

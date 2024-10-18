@@ -9,8 +9,9 @@ from django.views.generic import FormView, TemplateView
 from sage_otp.helpers.choices import ReasonOptions
 
 from sage_auth.forms import PasswordResetForm, ResetPasswordConfrimForm
-from sage_auth.mixins.email import EmailMixin
-from sage_auth.mixins.otp import VerifyOtpMixin
+from sage_auth.mixins import EmailMixin, VerifyOtpMixin
+from sage_auth.mixins.phone import PhoneOtpMixin
+from sage_auth.utils import set_required_fields
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +20,17 @@ User = get_user_model()
 
 class ForgetPasswordMixin(FormView, EmailMixin):
     """
-    Mixin that handles sending OTP (via email or SMS) for the forget password process.
+    Mixin that handles sending OTP (via email or SMS) for the forget password
+    process.
     """
 
     template_name = None
     form_class = PasswordResetForm
 
     def form_valid(self, form):
-        """Handle form validation, retrieve the user, and send OTP based on the strategy."""
+        """Handle form validation, retrieve the user, and send OTP based on the
+        strategy.
+        """
         identifier = form.cleaned_data.get("identifier")
         user = self.get_user(identifier)
 
@@ -34,6 +38,8 @@ class ForgetPasswordMixin(FormView, EmailMixin):
             self.request.session["email"] = identifier
             self.send_otp_based_on_strategy(user)
             self.request.session.save()
+            self.request.session["spa"] = True
+
             return redirect(self.get_success_url())
         else:
             messages.error(self.request, _("No user found with this information."))
@@ -50,13 +56,16 @@ class ForgetPasswordMixin(FormView, EmailMixin):
     def send_otp_based_on_strategy(self, user):
         """Send OTP based on the strategy in settings.AUTHENTICATION_METHODS."""
         if settings.AUTHENTICATION_METHODS.get("EMAIL_PASSWORD"):
-            return EmailMixin.form_valid(self, user=user, kind=1)
+            return EmailMixin.form_valid(
+                self, user=user, reason=ReasonOptions.FORGET_PASSWORD
+            )
 
         if settings.AUTHENTICATION_METHODS.get("PHONE_PASSWORD"):
-            return self.send_otp_sms(user.phone_number)
-
-    def send_otp_sms(self, phone_number):
-        pass
+            sms_obj = PhoneOtpMixin()
+            messages.info(
+                self.request, f"OTP sent to your phone number: {user.phone_number}"
+            )
+            return sms_obj.send_sms_otp(user, ReasonOptions.FORGET_PASSWORD)
 
 
 class ForgetPasswordConfirmMixin(VerifyOtpMixin, TemplateView):
@@ -70,7 +79,6 @@ class ForgetPasswordConfirmMixin(VerifyOtpMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         self.request.session["changing_password"] = True
         self.request.session["reason"] = ReasonOptions.FORGET_PASSWORD
-
         return super().post(request, *args, **kwargs)
 
 
@@ -81,7 +89,6 @@ class ForgetPasswordDoneMixin(FormView):
     form_class = ResetPasswordConfrimForm
 
     def dispatch(self, request, *args, **kwargs):
-
         if not request.session.get("changing_password"):
             logger.warning(
                 "Attempt to access password reset confirm view without changing password."
@@ -94,7 +101,10 @@ class ForgetPasswordDoneMixin(FormView):
             form_class = self.get_form_class()
 
         identify = self.request.session.get("email")
-        user = User.objects.get(email=identify)
+        username_field, _ = set_required_fields()
+
+        user = User.objects.get(**{username_field: identify})
+
         return form_class(user, **self.get_form_kwargs())
 
     def form_valid(self, form):
