@@ -25,6 +25,8 @@ class VerifyOtpMixin(View):
     lock_user = getattr(settings, "OTP_MAX_REQUEST_TIMEOUT", 10)
     reason = ReasonOptions.EMAIL_ACTIVATION
     success_url = None
+    minutes_left_expiry = None
+    seconds_left_expiry = None
     reactivate_process = False
 
     def setup(self, request, *args, **kwargs):
@@ -70,12 +72,12 @@ class VerifyOtpMixin(View):
                 self.send_new_otp(user)
                 return False
 
-            minutes_left_expiry = int(time_left_to_expire // 60)
-            seconds_left_expiry = int(time_left_to_expire % 60)
+            self.minutes_left_expiry = int(time_left_to_expire // 60)
+            self.seconds_left_expiry = int(time_left_to_expire % 60)
             messages.info(
                 self.request,
                 _(
-                    f"You have {minutes_left_expiry} minutes and {seconds_left_expiry} seconds left to enter the OTP."
+                    f"You have {self.minutes_left_expiry} minutes and {self.seconds_left_expiry} seconds left to enter the OTP."
                 ),
             )
             if otp_instance.failed_attempts_count >= otp_max:
@@ -110,10 +112,10 @@ class VerifyOtpMixin(View):
 
         except OTPExpiredException:
             messages.error(
-                self.request, "The OTP has expired. Please request a new one."
+                self.request, _("The OTP has expired. Please request a new one.")
             )
         except InvalidTokenException:
-            messages.error(self.request, "The OTP entered is incorrect.")
+            messages.error(self.request, _("The OTP entered is incorrect."))
         except SageUser.DoesNotExist:
             messages.error(self.request, "No user found with this email or identifier.")
 
@@ -134,7 +136,9 @@ class VerifyOtpMixin(View):
             if time_left > 0:
                 messages.error(
                     self.request,
-                    f"Too many post requests. Please wait {minutes_left} minutes and {seconds_left} seconds before trying again.",
+                    _(
+                        f"Too many post requests. Please wait {minutes_left} minutes and {seconds_left} seconds before trying again."
+                    ),
                 )
             else:
                 self.request.session["max_counter"] = 0
@@ -187,5 +191,12 @@ class VerifyOtpMixin(View):
             sms_obj = send_sms()
             sms_obj.send_one_message(str(user.phone_number), otp_data[0].token)
             messages.info(
-                self.request, f"New OTP sent to your phone number: {user.phone_number}"
+                self.request,
+                _(f"New OTP sent to your phone number: {user.phone_number}"),
             )
+
+    def get_context_data(self, **kwargs):
+        context = kwargs or {}
+        context["minutes_left_expiry"] = self.minutes_left_expiry
+        context["seconds_left_expiry"] = self.seconds_left_expiry
+        return context

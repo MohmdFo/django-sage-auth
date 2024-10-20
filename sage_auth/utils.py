@@ -23,7 +23,7 @@ def send_email_otp(token, email):
     message = render_to_string(
         "email_verification_template.html", {"verification_code": token}
     )
-    from_email = getattr(settings,"EMAIL_HOST_USER", None)
+    from_email = getattr(settings, "EMAIL_HOST_USER", None)
     recipient_list = [email]
 
     send_mail(
@@ -78,7 +78,7 @@ account_activation_token = AccountActivationTokenGenerator()
 class ActivationEmailSender:
     """Utility to send account activation email."""
 
-    def send_activation_email(self, user, request,url="activate"):
+    def send_activation_email(self, user, request, url="activate"):
         # Create the token and uid
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
