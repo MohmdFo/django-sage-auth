@@ -11,11 +11,11 @@ class SageUserAdmin(UserAdmin):
 
     username_field, required_fields = set_required_fields()
 
-    list_display = ["id", username_field] + required_fields + ["is_staff", "is_active"]
+    list_display = ["id", username_field] + required_fields + ["first_name", "last_name", "is_staff", "is_active"]
 
     fieldsets = (
         (None, {"fields": (username_field, "password")}),
-        (_("Personal info"), {"fields": required_fields}),
+        (_("Personal info"), {"fields": required_fields + ["first_name", "last_name"]}),
         (
             _("Permissions"),
             {
