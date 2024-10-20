@@ -98,7 +98,9 @@ class SageLoginMixin(LoginView):
             else:
                 messages.error(
                     self.request,
-                    "Your account is not activated. Please check your phone number or email",
+                    _(
+                        "Your account is not activated. Please check your phone number or email."
+                    ),
                 )
                 self.request.session["email"] = identifier
                 return redirect(self.reactivate_url)

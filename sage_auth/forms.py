@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.formfields import PhoneNumberField
 
@@ -125,12 +126,15 @@ class SageUserFormMixin(forms.ModelForm):
     def save(self, commit=True):
         """Save the custom user using the dynamic strategy."""
         user_data = self.get_user_data()
-
-        # Determine the strategy using your custom UserManager logic
-        strategy = SageUser.objects.get_authentication_strategies(user_data)
-        user = strategy.create_user(user_data)
-
-        return user
+        try:
+            with transaction.atomic():
+                strategy = SageUser.objects.get_authentication_strategies(user_data)
+                user = strategy.create_user(user_data)
+            return user
+        except IntegrityError as error:
+            raise ValidationError(
+                _("A user with the provided information already exists.")
+            ) from error
 
 
 class PasswordResetFormMixin(forms.Form):

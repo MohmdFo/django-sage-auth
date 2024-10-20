@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import redirect
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView
 from sage_otp.helpers.choices import OTPState, ReasonOptions
 from sage_otp.helpers.exceptions import OTPDoesNotExists
@@ -32,7 +33,7 @@ class ReactivationMixin(TemplateView, EmailMixin, VerifyOtpMixin):
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        username_field, _ = set_required_fields()
+        username_field, __ = set_required_fields()
 
         try:
             user = User.objects.get(**{username_field: self.user_identifier})
@@ -46,7 +47,9 @@ class ReactivationMixin(TemplateView, EmailMixin, VerifyOtpMixin):
                 if otp_instance.state == OTPState.ACTIVE:
                     messages.info(
                         request,
-                        "An active OTP already exists. Please check your phone for the verification code.",
+                        _(
+                            "An active OTP already exists. Please check your phone for the verification code."
+                        ),
                     )
                 else:
                     self.create_new_otp_or_activation_link(user, request)
@@ -70,7 +73,7 @@ class ReactivationMixin(TemplateView, EmailMixin, VerifyOtpMixin):
             ActivationEmailSender().send_activation_email(user, request)
             messages.success(
                 self.request,
-                "Account created successfully. Please check your email to activate your account.",
+                "Please check your email to activate your account.",
             )
             return HttpResponse("Activation link sent to your email address")
 

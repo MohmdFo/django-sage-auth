@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.utils.translation import gettext_lazy as _
 from sage_otp.helpers.choices import ReasonOptions
 from sage_otp.repository.managers.otp import OTPManager
 
@@ -21,7 +22,7 @@ class EmailMixin:
 
         self.send_otp(otp_data[0].token, user.email)
         messages.info(
-            self.request, f"Verification code was sent to your email: {user.email}"
+            self.request, _(f"Verification code was sent to your email: {user.email}")
         )
         return user.email
 

@@ -62,7 +62,7 @@ class ForgetPasswordMixin(FormView, EmailMixin):
         if settings.AUTHENTICATION_METHODS.get("PHONE_PASSWORD"):
             sms_obj = PhoneOtpMixin()
             messages.info(
-                self.request, f"OTP sent to your phone number: {user.phone_number}"
+                self.request, _(f"OTP sent to your phone number: {user.phone_number}")
             )
             return sms_obj.send_sms_otp(user, ReasonOptions.FORGET_PASSWORD)
 
@@ -112,7 +112,9 @@ class ForgetPasswordDoneMixin(FormView):
         del self.request.session["changing_password"]
         messages.success(
             self.request,
-            "Your password has been reset successfully. You can now login with your new password.",
+            _(
+                "Your password has been reset successfully. You can now login with your new password."
+            ),
         )
         logger.info("Password reset confirmed and form submitted successfully.")
         return super().form_valid(form)

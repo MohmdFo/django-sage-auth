@@ -2,12 +2,13 @@ from django.conf import settings
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import CreateView
 from sage_otp.helpers.choices import ReasonOptions
 
 from sage_auth.mixins.email import EmailMixin
 from sage_auth.mixins.phone import PhoneOtpMixin
-from sage_auth.utils import ActivationEmailSender, set_required_fields
+from sage_auth.utils import ActivationEmailSender
 
 
 class UserCreationMixin(CreateView, EmailMixin):
@@ -37,7 +38,9 @@ class UserCreationMixin(CreateView, EmailMixin):
             ActivationEmailSender().send_activation_email(user, self.request)
             messages.success(
                 self.request,
-                "Account created successfully. Please check your email to activate your account.",
+                _(
+                    "Account created successfully. Please check your email to activate your account."
+                ),
             )
             return HttpResponse("Activation link sent to your email address")
 
@@ -45,7 +48,6 @@ class UserCreationMixin(CreateView, EmailMixin):
 
     def send_otp_based_on_strategy(self, user):
         """Send OTP based on the strategy in settings.AUTHENTICATION_METHODS."""
-        username_field, _ = set_required_fields()
 
         if settings.AUTHENTICATION_METHODS.get("EMAIL_PASSWORD"):
             return EmailMixin.form_valid(self, user)
@@ -69,6 +71,6 @@ class UserCreationMixin(CreateView, EmailMixin):
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            messages.info(request, "You are already logged in.")
+            messages.info(request, _("You are already logged in."))
             return redirect(self.already_login_url)
         return super().get(request, *args, **kwargs)
