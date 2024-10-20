@@ -5,7 +5,7 @@ requires = [ "poetry-core" ]
 
 [tool.poetry]
 name = "django-sage-auth"
-version = "0.1.0"
+version = "0.1.5"
 description = "A project for handleing authentication processes"
 authors = [ "Radin Ghahremani <radin@sageteam.org>", "Sepehr Akbarzadeh <sepehr@sageteam.org>" ]
 keywords = [ "django", "auth", "sageteam", "django-packages" ]
@@ -30,14 +30,17 @@ classifiers = [
 "Issues" = "https://github.com/sageteamorg/django-sage-auth/issues"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-django = "^5.1.1"
-django-sage-otp = "^0.1.0"
+python = ">=3.10,<4.0"
+django = [
+    { version = ">=4.2,<5.0", python = ">=3.8,<3.10"}, 
+    { version = ">=4.2,<5.3", python = ">=3.10" }  # Django 4.2 and 5.x for Python 3.10+
+]
 django-ratelimit = "^4.1.0"
 python-sage-sms = "^0.1.1"
 six = "^1.16.0"
 smsir = "^1.0.5"
 django-phonenumber-field = { extras = [ "phonenumbers" ], version = "^8.0.0" }
+django-sage-otp = "^0.1.1"
 
 [tool.poetry.group.dev.dependencies]
 bandit = { extras = [ "toml" ], version = "^1.7.9" }
