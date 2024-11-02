@@ -41,14 +41,38 @@ def check_authentication_methods(app_configs, **kwargs):
                 id="authentication.E002",
             )
         )
+    if getattr(settings, "SEND_OTP", False) and getattr(
+        settings, "USER_ACCOUNT_ACTIVATION_ENABLED", False
+    ):
+        errors.append(
+            Error(
+                "Both 'SEND_OTP' and 'USER_ACCOUNT_ACTIVATION_ENABLED' cannot be True at the same time.",
+                hint="Set either 'SEND_OTP' or 'USER_ACCOUNT_ACTIVATION_ENABLED' to False.",
+                obj=settings,
+                id="authentication.E003",
+            )
+        )
+    return errors
 
+
+@register()
+def check_auth_user(app_configs, **kwargs):
+    errors = []
+    if not hasattr(settings, "AUTH_USER_MODEL"):
+        errors.append(
+            Error(
+                "'AUTH_USER_MODEL' setting is missing.",
+                hint="Define 'AUTH_USER_MODEL' in your settings to specify a sage_auth user model.",
+                obj=settings,
+                id="authentication.E003",
+            )
+        )
     return errors
 
 
 @register()
 def check_email_settings(app_configs, **kwargs):
     errors = []
-
     if settings.AUTHENTICATION_METHODS.get("EMAIL_PASSWORD", False):
         required_email_settings = [
             "EMAIL_BACKEND",
