@@ -10,6 +10,16 @@ from .base import AuthStrategy
 
 
 class CombinedStrategy(AuthStrategy):
+    """
+    A strategy class to authenticate and create users using a combination of
+    different authentication methods (email, phone, username, etc.).
+
+    This class accepts multiple strategies, allowing for flexible user
+    authentication based on defined strategies (e.g., EmailStrategy,
+    PhoneStrategy, UsernameStrategy). It validates user data and creates user
+    objects with attributes from each provided strategy.
+    """
+
     def __init__(self, strategies):
         """Initialize with multiple strategies."""
         self.strategies = strategies

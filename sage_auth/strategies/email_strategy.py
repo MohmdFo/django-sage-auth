@@ -1,20 +1,24 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 from .base import AuthStrategy
 
 
 class EmailStrategy(AuthStrategy):
+    """
+    Strategy for creating and handling user account using email authentication.
+
+    This strategy allows for creating and configuring a user account based on
+    email, password, and additional fields such as `is_staff` and
+    `is_superuser`.
+    It follows the general structure of Django's `get_user_model()` to create
+    and customize the user model with email as the primary identifier.
+    """
+
     def validate(self, user_data):
-        # email = user_data.get('email')
-        # if not email:
-        #     raise ValidationError("Email is required.")
-        # try:
-        #     validate_email(email)
-        # except ValidationError:
-        #     raise ValidationError("Invalid email format.")
-        # if get_user_model().objects.filter(email=email).exists():
-        #     raise ValidationError("Email already exists.")
-        pass
+        email = user_data.get("email")
+        if not email:
+            raise ValidationError("Email is required.")
 
     def create_user(self, user_data, user=None):
         """Create a user using the email field."""
@@ -30,5 +34,4 @@ class EmailStrategy(AuthStrategy):
             user.set_password(password)
 
         user.save()
-        print("User created")
         return user
