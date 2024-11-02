@@ -23,7 +23,7 @@ class SmsIr(ISmsProvider):
         cast_phone_number = self.phone_number_validator.validate_and_format(
             phone_number, region="IR"
         )
-        self.smsir.send_sms(cast_phone_number, message, self._line_number)
+        self.smsir.get_backends(cast_phone_number, message, self._line_number)
 
     def send_bulk_messages(
         self, phone_numbers: list[str], message: str, linenumber=None
