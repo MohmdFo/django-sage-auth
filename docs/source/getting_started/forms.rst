@@ -74,4 +74,4 @@ This form handles the final step in the password reset process, allowing users t
 
    For a practical implementation of these forms and how to integrate them into your project, please visit the following GitHub repository:
 
-   - [GitHub Repository: Real-life Example](https://github.com/radinceorc/sage_auth_example)
+   .. GitHub Repository: Real-life Example: https://github.com/radinceorc/sage_auth_example

@@ -133,4 +133,4 @@ Allows logged-in users to change their password.
 
    For a practical implementation of these mixins, including how to configure views and settings in a Django project, please visit the following GitHub repository:
 
-   - [GitHub Repository: Real-life Example](https://github.com/radinceorc/sage_auth_example)
+   .. GitHub Repository: Real-life Example: https://github.com/radinceorc/sage_auth_example
