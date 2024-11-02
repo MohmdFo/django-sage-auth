@@ -8,9 +8,13 @@ from django.utils.translation import gettext_lazy as _
 
 class CompanyEmailValidator(DjangoEmailValidator):
     """
-    Custom email validator that extends Django's EmailValidator.
+    A custom email validator that extends Django's built-in EmailValidator.
 
-    It validates the email format and optionally checks if the email domain is in the company-approved domains.
+    This validator checks if an email address is valid and, optionally, if it
+    belongs to an approved domain defined in the Django settings. It ensures
+    that the email format is correct and restricts users to
+    email domains specified.
+    in the `COMPANY_EMAIL_DOMAINS` setting, if provided.
     """
 
     def __call__(self, value):
