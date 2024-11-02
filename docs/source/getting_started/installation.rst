@@ -136,7 +136,7 @@ For SMS-based OTPs, you'll need to set up an SMS provider in your settings. Here
    SMS_CONFIGS = {
        "debug": True,
        "provider": {
-           "NAME": "sms.ir",  # The name of your SMS provider
+           "NAME": "your-sms-provider",  # The name of your SMS provider
            "API_KEY": "your-api-key-here",  # Replace with your SMS API key
        },
    }
