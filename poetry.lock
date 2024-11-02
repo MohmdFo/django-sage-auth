@@ -690,30 +690,30 @@ files = [
 
 [[package]]
 name = "django-sage-otp"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Django package for managing Otp"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "django_sage_otp-0.1.0-py3-none-any.whl", hash = "sha256:42397fccd45b93cf41e58ffe28af828a747ea3b040b320143d4c9ef507ef4d1a"},
-    {file = "django_sage_otp-0.1.0.tar.gz", hash = "sha256:10b77669d6e260ce6cefe533aaba58b713019f01e7e3aa2d263e84baca8a0e87"},
+    {file = "django_sage_otp-0.1.1-py3-none-any.whl", hash = "sha256:777130f4ca67ada91ef5752afc4f37f64bf5fc40b8aa769ce4ef92e4b3485136"},
+    {file = "django_sage_otp-0.1.1.tar.gz", hash = "sha256:0c44f27b724f7e3a57ad762d28d62840cf2df7a98275761f74d5c4c882398a6d"},
 ]
 
 [package.dependencies]
 django = {version = ">=4.2,<5.3", markers = "python_version >= \"3.10\""}
 django-import-export = ">=4.1.1,<5.0.0"
-django-sage-tools = ">=0.2.2,<0.3.0"
+django-sage-tools = ">=0.3.5,<0.4.0"
 tqdm = ">=4.66.5,<5.0.0"
 
 [[package]]
 name = "django-sage-tools"
-version = "0.2.2"
+version = "0.3.5"
 description = "Reusable, generic mixins for Django"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "django_sage_tools-0.2.2-py3-none-any.whl", hash = "sha256:9244160056dd3907ac85e7888665ed7eed93b0fc2780e444e2b29eee0024372a"},
-    {file = "django_sage_tools-0.2.2.tar.gz", hash = "sha256:b8b87e1c950b16a73ae4797ee0ac0383a34cedb4fb432143c4913054007aeb14"},
+    {file = "django_sage_tools-0.3.5-py3-none-any.whl", hash = "sha256:e511bcc8f682402d6710e0755dedc622c00bc78d0537d81f3997203ab65fde68"},
+    {file = "django_sage_tools-0.3.5.tar.gz", hash = "sha256:c825f80ca2bc10b2c61ad5ab3176d32cc66d324886eaaf8fdb2362d1bd0379f8"},
 ]
 
 [package.dependencies]
@@ -1947,5 +1947,5 @@ files = [
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.10"
-content-hash = "522c068c2f05fc39ba7a9a16a6e57dbe3f69d073c034abfa7fc2368ba3719af1"
+python-versions = ">=3.10,<4.0"
+content-hash = "bedddd9173ac99ab2d6d3995187daa811b147f3d9fd0f62afaac923cf444d18c"
