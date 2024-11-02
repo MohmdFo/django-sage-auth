@@ -16,11 +16,24 @@ class SageUser(AbstractUser):
         null=True,
         blank=True,
     )
+    is_block = models.BooleanField(null=True, blank=True)
     username = models.CharField(max_length=30, unique=True, null=True, blank=True)
 
     USERNAME_FIELD, REQUIRED_FIELDS = set_required_fields()
 
-    objects = AuthUserManager()
+    objects: AuthUserManager = AuthUserManager()
 
     def __str__(self):
-        return str(self.phone_number) or self.email
+        if self.phone_number:
+            return str(self.phone_number)
+        return self.email
+
+    def __repr__(self):
+        return (
+            f"<SageUser(username={self.username}, "
+            f"email={self.email}, phone_number={self.phone_number})>"
+        )
+
+    class Meta:
+        verbose_name = "Sage User"
+        verbose_name_plural = "Sage Users"
