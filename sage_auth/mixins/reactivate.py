@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
@@ -14,12 +16,19 @@ from sage_auth.mixins.phone import PhoneOtpMixin
 from sage_auth.models import SageUser
 from sage_auth.utils import ActivationEmailSender, set_required_fields
 
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
 class ReactivationMixin(TemplateView, EmailMixin, VerifyOtpMixin):
-    """Mixin to handle reactivation requests by checking if an active OTP already exists
-    or creating a new one.
+    """
+    Mixin to handle account reactivation requests by generating a new OTP or
+    activation link for the user, if an active OTP does not already exist.
+
+    This mixin checks if an OTP for reactivation is already active. If not, it
+    initiates a new OTP or sends an activation link based on the authentication
+    method defined in settings. This supports both email and phone number
+    reactivation.
     """
 
     template_name = "None"
@@ -30,6 +39,8 @@ class ReactivationMixin(TemplateView, EmailMixin, VerifyOtpMixin):
 
     def setup(self, request, *args, **kwargs):
         self.user_identifier = request.session.get("email")
+        logger.debug("User identifier set to: %s", self.user_identifier)
+
         return super().setup(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
@@ -37,6 +48,8 @@ class ReactivationMixin(TemplateView, EmailMixin, VerifyOtpMixin):
 
         try:
             user = User.objects.get(**{username_field: self.user_identifier})
+            logger.info("User found: %s", user)
+
             if username_field == "phone_number":
                 self.reason = ReasonOptions.PHONE_NUMBER_ACTIVATION
             try:
@@ -51,6 +64,8 @@ class ReactivationMixin(TemplateView, EmailMixin, VerifyOtpMixin):
                             "An active OTP already exists. Please check your phone for the verification code."
                         ),
                     )
+                    logger.info("Active OTP exists for user: %s", user)
+
                 else:
                     self.create_new_otp_or_activation_link(user, request)
 
@@ -60,6 +75,7 @@ class ReactivationMixin(TemplateView, EmailMixin, VerifyOtpMixin):
             return super().get(request, *args, **kwargs)
 
         except SageUser.DoesNotExist:
+            logger.error("User not found with identifier: %s", self.user_identifier)
             messages.error(request, "No user found with this email.")
             return redirect(self.get_success_url())
 
@@ -75,19 +91,23 @@ class ReactivationMixin(TemplateView, EmailMixin, VerifyOtpMixin):
                 self.request,
                 "Please check your email to activate your account.",
             )
+            logger.info("Activation link sent to user: %s", user)
             return HttpResponse("Activation link sent to your email address")
 
     def get_success_url(self):
         self.request.session["spa"] = True
         if not self.success_url:
+            logger.error("The success_url attribute is not set.")
             raise ValueError("The success_url attribute is not set.")
         return self.success_url
 
     def send_otp_based_on_strategy(self, user):
         if settings.AUTHENTICATION_METHODS.get("EMAIL_PASSWORD"):
+            logger.info("Sending email-based OTP to user: %s", user)
             return EmailMixin.form_valid(self, user)
 
         if settings.AUTHENTICATION_METHODS.get("PHONE_PASSWORD"):
+            logger.info("Sending phone-based OTP to user: %s", user)
             sms_obj = PhoneOtpMixin()
             self.request.session["reason"] = ReasonOptions.PHONE_NUMBER_ACTIVATION
             return sms_obj.send_sms_otp(user)
