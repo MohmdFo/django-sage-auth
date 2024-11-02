@@ -41,11 +41,11 @@ Thank you for your interest in contributing to our package! This document outlin
 6. **Run Code Quality Checks**: Ensure code quality with pre-commit, Ruff, and Pylint.
     ```bash
     poetry run pre-commit run --all-files
-    poetry run ruff check sage_invoice/ --fix
-    poetry run black sage_invoice/
-    poetry run isort sage_invoice/
-    poetry run pylint sage_invoice/
-    poetry run bandit -r sage_invoice/ -c pyproject.toml
+    poetry run ruff check sage_auth/ --fix
+    poetry run black sage_auth/
+    poetry run isort sage_auth/
+    poetry run pylint sage_auth/
+    poetry run bandit -r sage_auth/ -c pyproject.toml
     ```
 
 7. **Run Tests**: Ensure all tests pass using Poetry.
