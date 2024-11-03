@@ -3,6 +3,10 @@ import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import PasswordChangeDoneView, PasswordChangeView
+from django.core.exceptions import ImproperlyConfigured
 from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, TemplateView
@@ -19,8 +23,11 @@ User = get_user_model()
 
 class ForgetPasswordMixin(FormView, EmailMixin):
     """
-    Mixin that handles sending OTP (via email or SMS) for the forget password
-    process.
+    Mixin to facilitate OTP-based password recovery.
+
+    This mixin handles sending an OTP for the password recovery process, either
+    by email or SMS, based on the configured authentication strategy. Once the
+    OTP is sent, it redirects to a success URL for verification.
     """
 
     template_name = None
@@ -68,6 +75,16 @@ class ForgetPasswordMixin(FormView, EmailMixin):
 
 
 class ForgetPasswordConfirmMixin(VerifyOtpMixin, TemplateView):
+    """
+    Mixin to handle OTP verification for password recovery.
+
+    This mixin verifies the OTP provided by the user to
+    ensure the password reset.
+    request is valid. It utilizes the `VerifyOtpMixin`
+    to check OTP validity and  enables the password reset process upon
+    successful OTP confirmation.
+    """
+
     template_name = "None"
     success_url = None
 
@@ -82,18 +99,28 @@ class ForgetPasswordConfirmMixin(VerifyOtpMixin, TemplateView):
 
 
 class ForgetPasswordDoneMixin(FormView):
+    """
+    Mixin to finalize the password reset process after OTP verification.
+
+    This mixin provides a view for users to complete the password reset process
+    after OTP verification. It ensures that a password reset is in progress and
+    directs users to a successful reset page upon completion.
+    """
+
     template_name = None
     page_name = "Password reset sent"
     success_url = None
     form_class = None
-    login_url = None
+    no_access_url = None
 
     def dispatch(self, request, *args, **kwargs):
+        if not self.no_access_url:
+            raise ImproperlyConfigured("The 'no_access_url' attribute must be set.")
         if not request.session.get("changing_password"):
             logger.warning(
                 "Attempt to access password reset confirm view without changing password."
             )
-            return redirect(self.login_url, permanent=False)
+            return redirect(self.no_access_url, permanent=False)
         return super().dispatch(request, *args, **kwargs)
 
     def get_form(self, form_class=None):
@@ -118,3 +145,25 @@ class ForgetPasswordDoneMixin(FormView):
         )
         logger.info("Password reset confirmed and form submitted successfully.")
         return super().form_valid(form)
+
+
+class PasswordChangeMixin(LoginRequiredMixin, PasswordChangeView):
+    """
+    A mixin for handling password changes for logged-in users, utilizing Django's
+    built-in PasswordChangeView for handling GET and POST requests.
+    """
+
+    form_class = PasswordChangeForm
+    template_name = None
+    success_url = None
+
+
+class PasswordChangeDoneMixin(LoginRequiredMixin, PasswordChangeDoneView):
+    """
+    A mixin for handling the password change confirmation page after
+    a successful password update utilizing Django's built-in.
+
+    PasswordChangeDoneView.
+    """
+
+    template_name = None

@@ -5,6 +5,14 @@ from .base import AuthStrategy
 
 
 class UsernameStrategy(AuthStrategy):
+    """
+    Strategy for user creation and validation using the username as
+    the unique identifier.This strategy manages user accounts where usernames.
+
+    are required to be unique, offering validation checks for uniqueness and
+    field population on creation.
+    """
+
     def validate(self, user_data):
         username = user_data.get("username")
         if not username:

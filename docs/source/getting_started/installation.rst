@@ -22,9 +22,9 @@ To install the `sage_auth` and `sage_otp` modules for managing OTPs and custom u
 
       INSTALLED_APPS = [
           # other apps
-          'sage_auth',
-          'sage_otp',
-          'phonenumber_field',
+          "sage_auth",
+          "sage_otp",
+          "phonenumber_field",
       ]
 
 3. Apply migrations:
@@ -61,6 +61,18 @@ You can control how OTP verifications and lockouts behave using the following se
 
      OTP_MAX_REQUEST_TIMEOUT = 10
 
+- **OTP_BLOCK_COUNT**: Defines how many time after use is set to wait will be block
+
+  .. code-block:: python
+
+     OTP_BLOCK_COUNT = 10
+
+- **ACTIVATION_LINK_EXPIRY_MINUTES**: Define How many time the activates link is valid
+
+  .. code-block:: python
+
+     ACTIVATION_LINK_EXPIRY_MINUTES = 1
+
 Authentication Methods
 ----------------------
 You can configure how users authenticate with your system. Choose whether users authenticate using email, phone number, or username:
@@ -68,9 +80,9 @@ You can configure how users authenticate with your system. Choose whether users 
 .. code-block:: python
 
    AUTHENTICATION_METHODS = {
-       'EMAIL_PASSWORD': True,    # Enable email authentication
-       'PHONE_PASSWORD': True,    # Enable phone number authentication
-       'USERNAME_PASSWORD': False, # Disable username authentication
+       "EMAIL_PASSWORD": True,  # Enable email authentication
+       "PHONE_PASSWORD": True,  # Enable phone number authentication
+       "USERNAME_PASSWORD": False,  # Disable username authentication
    }
 
 .. note::
@@ -97,9 +109,7 @@ Optional Settings
 
    .. code-block:: python
 
-      COMPANY_EMAIL_DOMAINS = [
-          'sageteam.org'
-      ]
+      COMPANY_EMAIL_DOMAINS = ["sageteam.org"]
 
 Email OTP Configuration
 ------------------------
@@ -107,13 +117,13 @@ To send OTPs via email, configure your email backend in `settings.py`:
 
 .. code-block:: python
 
-   EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-   EMAIL_HOST = 'smtp.gmail.com'
+   EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+   EMAIL_HOST = "smtp.gmail.com"
    EMAIL_PORT = 587
-   EMAIL_HOST_USER = 'your-email@gmail.com'
-   EMAIL_HOST_PASSWORD = 'your-email-password'
+   EMAIL_HOST_USER = "your-email@gmail.com"
+   EMAIL_HOST_PASSWORD = "your-email-password"
    EMAIL_USE_TLS = True
-   DEFAULT_FROM_EMAIL = 'Your Company <your-email@gmail.com>'
+   DEFAULT_FROM_EMAIL = "Your Company <your-email@gmail.com>"
 
 You can adjust the email settings to match your email provider.
 
@@ -126,9 +136,9 @@ For SMS-based OTPs, you'll need to set up an SMS provider in your settings. Here
    SMS_CONFIGS = {
        "debug": True,
        "provider": {
-           "NAME": "sms.ir",  # The name of your SMS provider
+           "NAME": "your-sms-provider",  # The name of your SMS provider
            "API_KEY": "your-api-key-here",  # Replace with your SMS API key
-       }
+       },
    }
 
 This configuration allows your application to send OTPs via the SMS provider specified.
@@ -139,7 +149,7 @@ You need to define the custom user model in your Django settings file. Make sure
 
 .. code-block:: python
 
-   AUTH_USER_MODEL = 'sage_auth.SageUser'
+   AUTH_USER_MODEL = "sage_auth.SageUser"
 
 This will point to the custom user model provided by `sage_auth`, which supports email, phone, and username-based authentication.
 

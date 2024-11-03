@@ -1,3 +1,4 @@
+from .activate import ActivateAccountMixin
 from .email import EmailMixin
 from .login import LoginOtpMixin, LoginOtpVerifyMixin, SageLoginMixin
 from .otp import VerifyOtpMixin
@@ -22,4 +23,5 @@ __all__ = [
     "LoginOtpVerifyMixin",
     "PhoneOtpMixin",
     "SageLoginMixin",
+    "ActivateAccountMixin",
 ]

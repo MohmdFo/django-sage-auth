@@ -6,16 +6,12 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import RequestFactory
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 
 from sage_auth.utils import (
-    otpCreate,
     send_email_otp,
     set_required_fields,
-    account_activation_token,
     ActivationEmailSender,
-    send_sms
+    get_backends
 )
 
 User = get_user_model()
@@ -23,12 +19,6 @@ User = get_user_model()
 
 class TestUtils:
     """Test class for utility functions."""
-
-    def test_otp_create(self):
-        """Test that the generated OTP is a 5-digit numeric string."""
-        otp = otpCreate()
-        assert otp.isdigit(), "OTP should be a numeric string"
-        assert len(otp) == 5, "OTP should be exactly 5 digits"
 
     @pytest.mark.django_db
     def test_send_email_otp(self):
@@ -88,15 +78,12 @@ class TestUtils:
 
     
     @pytest.mark.django_db
-    def test_send_sms(self):
-        """Test the send_sms function with real SMS backend."""
-        
-        sms_provider = send_sms()
-
+    def test_get_backends(self):
+        """Test the get_backends function with real SMS backend."""
+        sms_provider = get_backends()
         assert sms_provider is not None, "SMS provider should not be None"
-
         recipient_number = "+1234567890" 
-        message_content = "This is a test message for send_sms function."
+        message_content = "This is a test message for get_backends function."
 
         result = sms_provider.send_one_message(recipient_number, message_content)
         assert result == None

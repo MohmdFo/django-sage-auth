@@ -7,6 +7,14 @@ from .base import AuthStrategy
 
 
 class PhoneStrategy(AuthStrategy):
+    """Strategy for managing user creation and validation using
+    phone number-based authentication.
+
+    This strategy allows the creation of user accounts with phone numbers
+    as the  unique identifier, providing format validation, uniqueness checks
+    and other configuration options such as `is_staff` and `is_superuser`.
+    """
+
     def validate(self, user_data):
         phone_number = user_data.get("phone_number")
         if not phone_number:
