@@ -112,39 +112,52 @@ class SageLoginMixin(LoginView):
         if not self.success_url:
             raise ImproperlyConfigured("The 'success_url' attribute must be set.")
         if not self.reactivate_url:
-            raise ImproperlyConfigured("The 'reactivate_url' attribute must be set in.")
+            raise ImproperlyConfigured("The 'reactivate_url' attribute must be set.")
         return super().dispatch(request, *args, **kwargs)
 
     def form_invalid(self, form):
+        # Retrieve user identifier and password from form
         identifier = form.cleaned_data.get("username")
         password = form.cleaned_data.get("password")
         username_field, __ = set_required_fields()
+
         try:
+            # Attempt to fetch the user using the identifier
             user = User.objects.get(**{username_field: identifier})
+            
+            # If password does not match, return the form as invalid with a message
             if not check_password(password, user.password):
+                messages.error(self.request, _("Incorrect password. Please try again."))
                 return super().form_invalid(form)
         except User.DoesNotExist:
-            user = None
-        if user is not None:
-            if user.is_block:
-                messages.error(
-                    self.request,
-                    _("Your account have been blocked for security reasons"),
-                )
-                raise PermissionDenied("You have been blocked")
-            if not user.is_active:
-                messages.error(
-                    self.request,
-                    _(
-                        "Your account is not activated. Please check your phone number or email."
-                    ),
-                )
-                self.request.session["email"] = identifier
-                return redirect(self.reactivate_url)
-            else:
-                return super().form_invalid(form)
-        else:
+            # If user does not exist, show a generic invalid login message
+            messages.error(
+                self.request, _("Invalid login credentials. Please try again.")
+            )
             return super().form_invalid(form)
+
+        # If user exists, check for specific user status conditions
+        if user.is_block:
+            messages.error(
+                self.request,
+                _("Your account has been blocked for security reasons. Please contact support."),
+            )
+            raise PermissionDenied("You have been blocked.")
+        
+        if not user.is_active:
+            messages.error(
+                self.request,
+                _("Your account is not activated. Please check your phone number or email for activation instructions."),
+            )
+            self.request.session["email"] = identifier
+            return redirect(self.reactivate_url)
+        
+        # For any other unspecified invalid login scenario, return a generic error message
+        messages.error(
+            self.request,
+            _("Unable to log in with the provided credentials. Please check your information."),
+        )
+        return super().form_invalid(form)
 
     def get_success_url(self):
         return self.success_url
