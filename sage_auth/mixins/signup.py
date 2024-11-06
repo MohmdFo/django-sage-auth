@@ -37,7 +37,7 @@ class UserCreationMixin(CreateView, EmailMixin):
     def dispatch(self, request, *args, **kwargs):
         """Ensure required URLs are set before processing the request."""
         if not self.already_login_url:
-            raise ImproperlyConfigured("The 'success_url' attribute must be set.")
+            raise ImproperlyConfigured("The 'already_login_url' attribute must be set.")
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -85,6 +85,10 @@ class UserCreationMixin(CreateView, EmailMixin):
     def form_invalid(self, form):
         """Handle invalid form submissions."""
         logger.warning("Form submission invalid: %s", form.errors)
+        messages.error(
+            self.request,
+            _("There was an error with your submission. Please check the form and try again.")
+        )
         return self.render_to_response(self.get_context_data(form=form))
 
     def get_success_url(self):
