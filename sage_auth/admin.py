@@ -24,7 +24,8 @@ class SageUserAdmin(UserAdmin):
                     "is_staff",
                     "is_superuser",
                     "groups",
-                    "is_block" "user_permissions",
+                    "is_block",
+                    "user_permissions",
                 )
             },
         ),
