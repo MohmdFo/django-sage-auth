@@ -9,3 +9,4 @@ class SageAuthConfig(AppConfig):
 
     def ready(self):
         import sage_auth.checks
+        import sage_auth.signals
