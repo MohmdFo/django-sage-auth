@@ -2,10 +2,8 @@ from django.contrib.auth.signals import (
     user_logged_in,
     user_login_failed
 )
-from django.dispatch import Signal
-from django.dispatch import receiver
-from django.conf import settings
-from django.apps import apps
+from django.dispatch import Signal, receiver
+from django.contrib.auth import get_user_model
 
 from .models import Security
 
@@ -36,11 +34,10 @@ def update_security_metrics(sender, request, user, **kwargs):
 
 @receiver(user_login_failed)
 def handle_failed_login(sender, credentials, **kwargs):
-    User = apps.get_model(settings.AUTH_USER_MODEL)
+    User = get_user_model()
     username_field, _ = User.USERNAME_FIELD, User.REQUIRED_FIELDS
-    username_value = credentials.get(username_field)
     try:
-        user = User.objects.get(**{username_field: username_value})
+        user = User.objects.get(**{username_field: credentials['username']})
     except User.DoesNotExist:
         user = None
     if user:
