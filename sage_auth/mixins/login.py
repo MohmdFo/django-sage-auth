@@ -9,12 +9,16 @@ from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView, TemplateView
-from sage_otp.helpers.choices import ReasonOptions
 
+from sage_otp.helpers.choices import ReasonOptions
 from sage_auth.mixins.email import EmailMixin
 from sage_auth.mixins.otp import VerifyOtpMixin
 from sage_auth.mixins.phone import PhoneOtpMixin
 from sage_auth.utils import set_required_fields
+from sage_auth.signals import (
+    user_login_attempt,
+    user_login_failed
+)
 
 logger = logging.getLogger(__name__)
 
@@ -116,48 +120,46 @@ class SageLoginMixin(LoginView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_invalid(self, form):
-        # Retrieve user identifier and password from form
         identifier = form.cleaned_data.get("username")
         password = form.cleaned_data.get("password")
         username_field, __ = set_required_fields()
-
         try:
-            # Attempt to fetch the user using the identifier
             user = User.objects.get(**{username_field: identifier})
-            
-            # If password does not match, return the form as invalid with a message
             if not check_password(password, user.password):
-                messages.error(self.request, _("Incorrect password. Please try again."))
+                user_login_attempt.send(sender=self.__class__, user=user, identifier=identifier, success=False)
                 return super().form_invalid(form)
         except User.DoesNotExist:
-            # If user does not exist, show a generic invalid login message
-            messages.error(
-                self.request, _("Invalid login credentials. Please try again.")
-            )
+            user = None
+            user_login_failed.send(sender=self.__class__, identifier=identifier)
+
+        if user is not None:
+            if user.is_block:
+                messages.error(
+                    self.request,
+                    _("Your account has been blocked for security reasons."),
+                )
+                raise PermissionDenied("You have been blocked")
+            if not user.is_active:
+                messages.error(
+                    self.request,
+                    _("Your account is not activated. Please check your phone number or email."),
+                )
+                self.request.session["email"] = identifier
+                user_login_attempt.send(sender=self.__class__, user=user, identifier=identifier, success=False)
+                return redirect(self.reactivate_url)
+            else:
+                user_login_attempt.send(sender=self.__class__, user=user, identifier=identifier, success=False)
+                return super().form_invalid(form)
+        else:
+            user_login_failed.send(sender=self.__class__, identifier=identifier)
             return super().form_invalid(form)
 
-        # If user exists, check for specific user status conditions
-        if user.is_block:
-            messages.error(
-                self.request,
-                _("Your account has been blocked for security reasons. Please contact support."),
-            )
-            raise PermissionDenied("You have been blocked.")
-        
-        if not user.is_active:
-            messages.error(
-                self.request,
-                _("Your account is not activated. Please check your phone number or email for activation instructions."),
-            )
-            self.request.session["email"] = identifier
-            return redirect(self.reactivate_url)
-        
-        # For any other unspecified invalid login scenario, return a generic error message
-        messages.error(
-            self.request,
-            _("Unable to log in with the provided credentials. Please check your information."),
-        )
-        return super().form_invalid(form)
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        user = self.request.user
+        identifier = form.cleaned_data.get("username")
+        user_login_attempt.send(sender=self.__class__, user=user, identifier=identifier, success=True)
+        return response
 
     def get_success_url(self):
         return self.success_url
