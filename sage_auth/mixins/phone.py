@@ -4,6 +4,7 @@ from sage_otp.helpers.choices import ReasonOptions
 from sage_otp.repository.managers.otp import OTPManager
 
 from sage_auth.utils import get_backends
+from sage_auth.signals import otp_generated
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +23,12 @@ class PhoneOtpMixin:
     otp_manager = OTPManager()
 
     def send_otp(self, otp, phone):
-        """Send OTP to the user's phone."""
         logger.info("Attempting to send OTP to phone: %s", phone)
         obj = get_backends()
         obj.send_one_message(phone, otp)
+        otp_generated.send(
+            sender=self.__class__, user=None, method="phone", reason=self.reason, otp=otp
+        )
 
     def handle_otp(self, user, reason):
         """Generate and send OTP."""

@@ -12,6 +12,7 @@ from sage_otp.helpers.choices import ReasonOptions
 from sage_auth.mixins.email import EmailMixin
 from sage_auth.mixins.phone import PhoneOtpMixin
 from sage_auth.utils import ActivationEmailSender
+from sage_auth.signals import user_registered
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,10 @@ class UserCreationMixin(CreateView, EmailMixin):
         user.is_active = False
         user.save()
         logger.info("User created but not activated: %s", user)
+
+        # Trigger the user_registered signal
+        user_registered.send(sender=self.__class__, user=user, data=form.cleaned_data)
+
         if settings.SEND_OTP:
             self.email = self.send_otp_based_on_strategy(user)
             self.request.session["email"] = self.email

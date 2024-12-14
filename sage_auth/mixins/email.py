@@ -6,6 +6,7 @@ from sage_otp.helpers.choices import ReasonOptions
 from sage_otp.repository.managers.otp import OTPManager
 
 from sage_auth.utils import send_email_otp
+from sage_auth.signals import otp_generated
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +25,11 @@ class EmailMixin:
     otp_manager = OTPManager()
 
     def send_otp(self, otp, email):
-        """Send OTP to the user's email."""
         send_email_otp(otp, email)
+        otp_generated.send(
+            sender=self.__class__, user=None, method="email", reason=ReasonOptions.EMAIL_ACTIVATION, otp=otp
+        )
+        logger.debug("OTP sent to email: %s", email)
 
     def handle_otp(self, user, reason):
         """Generate and send OTP if email is the USERNAME_FIELD."""

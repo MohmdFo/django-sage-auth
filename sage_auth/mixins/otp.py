@@ -15,6 +15,7 @@ from sage_otp.repository.managers.otp import OTPManager
 
 from sage_auth.models import SageUser
 from sage_auth.utils import get_backends, send_email_otp
+from sage_auth.signals import otp_expired, otp_failed, otp_verified
 
 logger = logging.getLogger(__name__)
 
@@ -67,14 +68,10 @@ class VerifyOtpMixin(View):
         try:
             logger.debug("Verifying OTP for identifier: %s", user_identifier)
             user = self.get_user_by_identifier()
-            session_search = self.request.session.get("reason")
-            if session_search:
-                self.reason = session_search
             otp_instance = self.otp_manager.get_otp(
                 identifier=user.id, reason=self.reason
             )
             otp_max = getattr(settings, "OTP_MAX_FAILED_ATTEMPTS", 4)
-            # Calculate OTP expiration
             otp_expiry_time = otp_instance.last_sent_at + timedelta(
                 seconds=self.otp_manager.EXPIRE_TIME.seconds
             )
@@ -82,64 +79,56 @@ class VerifyOtpMixin(View):
 
             if time_left_to_expire <= 0:
                 otp_instance.update_state(OTPState.EXPIRED)
+                otp_expired.send(sender=self.__class__, user=user, reason=self.reason)
                 messages.error(
                     self.request,
-                    _("Your Time has Finished. We will send you a new OTP."),
+                    _("Your OTP has expired. A new OTP has been sent."),
                 )
                 self.send_new_otp(user)
                 return False
-            # Set time left for OTP entry
-            self.minutes_left_expiry = int(time_left_to_expire // 60)
-            self.seconds_left_expiry = int(time_left_to_expire % 60)
-            messages.info(
-                self.request,
-                _(
-                    f"You have {self.minutes_left_expiry} minutes and {self.seconds_left_expiry} seconds left to enter the OTP."
-                ),
-            )
+
             if otp_instance.failed_attempts_count >= otp_max:
-                otp_instance.update_state(OTPState.EXPIRED)
+                otp_failed.send(
+                    sender=self.__class__,
+                    user=user,
+                    reason=self.reason,
+                    attempts=otp_instance.failed_attempts_count,
+                )
                 messages.error(
                     self.request,
-                    _(
-                        "You have exceeded the maximum allowed OTP attempts.We will send a new OTP."
-                    ),
+                    _("Too many failed attempts. A new OTP has been sent."),
                 )
                 self.send_new_otp(user)
                 return False
-            # If the entered OTP matches, activate the user
+
             if otp_instance.token == entered_otp:
                 user.is_active = True
                 otp_instance.state = OTPState.CONSUMED
                 user.save()
                 otp_instance.save()
+                otp_verified.send(
+                    sender=self.__class__, user=user, success=True, reason=self.reason
+                )
                 messages.success(
-                    self.request,
-                    _(
-                        "Your OTP was successfully verified. Your account is now active."
-                    ),
+                    self.request, _("Your OTP was successfully verified.")
                 )
                 return user
-            # Handle incorrect OTP entry
             else:
                 otp_instance.failed_attempts_count += 1
-                logger.warning("Incorrect OTP entered for user: %s", user_identifier)
                 otp_instance.save()
-                messages.error(self.request, "The OTP entered is incorrect.")
+                otp_failed.send(
+                    sender=self.__class__,
+                    user=user,
+                    reason=self.reason,
+                    attempts=otp_instance.failed_attempts_count,
+                )
+                messages.error(self.request, _("The OTP entered is incorrect."))
                 return False
 
-        except OTPExpiredException:
-            logger.error("OTP expired exception for user: %s", user_identifier)
-            messages.error(
-                self.request, _("The OTP has expired. Please request a new one.")
-            )
-        except InvalidTokenException:
-            logger.error("Invalid OTP token for user: %s", user_identifier)
-            messages.error(self.request, _("The OTP entered is incorrect."))
-        except SageUser.DoesNotExist:
-            logger.error("No user found with identifier: %s", user_identifier)
-            messages.error(self.request, "No user found with this email or identifier.")
-        return False
+        except Exception as e:
+            logger.error("OTP verification error: %s", e)
+            otp_failed.send(sender=self.__class__, user=None, reason=self.reason, attempts=0)
+            return False
 
     def locked_user(self, count):
         return count >= self.lock_user

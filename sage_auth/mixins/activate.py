@@ -14,6 +14,8 @@ from django.contrib.auth.tokens import default_token_generator
 from django.http import HttpResponse
 import base64
 
+from sage_auth.signals import activation_failed, user_activated
+
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -49,12 +51,6 @@ class ActivateAccountMixin(View):
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, uidb64, token, ts):
-        """
-        Handle GET requests for account activation.
-        Decodes the user's ID from `uidb64`, verifies the activation `token`,
-        and activates the user's account if valid. If the link has expired,
-        a new activation email is sent.
-        """
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(id=uid)
@@ -70,6 +66,7 @@ class ActivateAccountMixin(View):
                     user.email
                 )
                 ActivationEmailSender().send_activation_email(user, request)
+                activation_failed.send(sender=self.__class__, user=user, reason="Link expired")
                 return HttpResponse(
                     "The activation link expired. A new activation email has been sent."
                 )
@@ -77,9 +74,11 @@ class ActivateAccountMixin(View):
             if default_token_generator.check_token(user, token):
                 user.is_active = True
                 user.save()
-                logger.info(
-                    "User %s has been successfully activated.", user.email
-                )
+                logger.info("User %s has been successfully activated.", user.email)
+
+                # Trigger user_activated signal
+                user_activated.send(sender=self.__class__, user=user)
+
                 messages.success(
                     request,
                     "Your account has been activated successfully. You can now log in."
@@ -90,6 +89,7 @@ class ActivateAccountMixin(View):
                     "Invalid activation token for user %s.",
                     user.email
                 )
+                activation_failed.send(sender=self.__class__, user=user, reason="Invalid token")
         except (ValueError, OverflowError) as e:
             logger.error("Error in activation link processing: %s", e)
             messages.error(
