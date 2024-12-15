@@ -2,7 +2,10 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 
-class Security(models.Model):
+from sage_tools.mixins.models import TimeStampMixin
+from sage_auth.helpers.choices import GroupChoices
+
+class LoginAttempt(TimeStampMixin):
     """
     A model to track security-related metrics for a user.
     Fields:
@@ -55,12 +58,82 @@ class Security(models.Model):
         self.save()
 
     def __str__(self):
-        return f"Security Metrics for {self.user}"
+        return f"Login Attempt Metrics for {self.user}"
 
     class Meta:
-        verbose_name = _("Security")
-        verbose_name_plural = _("Security")
+        verbose_name = _("Login Attempt")
+        verbose_name_plural = _("Login Attempt")
         indexes = [
             models.Index(fields=["user"], name="idx_security_user")
         ]
         db_table_comment = "Tracks security-related metrics such as login counts and failed attempts for users."
+
+
+class SecurityAnnouncement(TimeStampMixin):
+    """
+    Model representing a security announcement or alert for users,
+    containing details such as title, content, date, and optional call-to-action buttons.
+    Designed to assist administrators in managing announcements while providing metadata for developers.
+    """
+    title = models.CharField(
+        max_length=255,
+        help_text=_("Enter the main title of the announcement (e.g., 'Security Guidelines')."),
+        db_comment="The main title of the security announcement."
+    )
+    subtitle = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Optional subtitle providing additional context (e.g., 'Login Attempt Failed')."),
+        db_comment="An optional subtitle for the announcement."
+    )
+    content = models.TextField(
+        help_text=_("Add the main content of the announcement, explaining details to users."),
+        db_comment="The detailed text content of the security announcement."
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text=_("Mark this as active to display it to users or inactive to hide it."),
+        db_comment="Indicates whether the security announcement is active or inactive."
+    )
+    group = models.CharField(
+        max_length=10,
+        choices=GroupChoices.choices,
+        default=GroupChoices.ALERT,
+        help_text=_("Specify whether this is an alert or a guideline."),
+        db_comment="Categorizes the announcement as either an alert or a guideline."
+    )
+    button_text = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text=_("Enter text for the call-to-action button (e.g., 'Join' or 'Register')."),
+        db_comment="The label for the call-to-action button, if applicable."
+    )
+    button_link = models.URLField(
+        blank=True,
+        null=True,
+        help_text=_("Provide the URL the button redirects to, if applicable."),
+        db_comment="The URL linked to the call-to-action button."
+    )
+    date = models.DateField(
+        blank=True,
+        null=True,
+        help_text=_("Specify the date of the announcement or event."),
+        db_comment="The date associated with the security announcement."
+    )
+    location = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Enter the location for the event, if applicable (e.g., 'Soho Avenue, Tokyo')."),
+        db_comment="Optional location details for the announcement."
+    )
+
+    def __str__(self):
+        return f"{self.title} ({self.date})" if self.date else self.title
+
+
+    class Meta:
+        verbose_name = _("Security Announcement")
+        verbose_name_plural = _("Security Announcements")

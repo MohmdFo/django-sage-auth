@@ -1,7 +1,8 @@
 from .user import SageUser
-from .security import Security
+from .security import LoginAttempt, SecurityAnnouncement
 
 __all__ = [
     'SageUser',
-    'Security'
+    'LoginAttempt',
+    'SecurityAnnouncement'
 ]

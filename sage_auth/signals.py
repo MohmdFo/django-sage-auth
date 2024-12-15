@@ -5,7 +5,7 @@ from django.contrib.auth.signals import (
 from django.dispatch import Signal, receiver
 from django.contrib.auth import get_user_model
 
-from .models import Security
+from .models import LoginAttempt
 
 # Login Scenarios
 user_login_attempt = Signal()
@@ -26,7 +26,7 @@ otp_failed = Signal()
 
 @receiver(user_logged_in)
 def update_security_metrics(sender, request, user, **kwargs):
-    security,_ = Security.objects.get_or_create(user=user)
+    security,_ = LoginAttempt.objects.get_or_create(user=user)
     security.increment_total_logins()
     if user.is_staff or user.is_superuser:
         security.increment_admin_logins()
@@ -41,5 +41,5 @@ def handle_failed_login(sender, credentials, **kwargs):
     except User.DoesNotExist:
         user = None
     if user:
-        security, created = Security.objects.get_or_create(user=user)
+        security, created = LoginAttempt.objects.get_or_create(user=user)
         security.increment_failed_attempts()
