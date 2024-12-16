@@ -76,15 +76,6 @@ class LoginAttemptModelAdmin(admin.ModelAdmin):
         ),
     )
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        latest_attempts = (
-            qs.values("user")
-            .annotate(latest_id=Max("id"))
-            .values_list("latest_id", flat=True)
-        )
-        return qs.filter(id__in=latest_attempts)
-
 
 @admin.register(SecurityAnnouncement)
 class SecurityAnnouncementAdmin(admin.ModelAdmin):

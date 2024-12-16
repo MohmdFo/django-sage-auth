@@ -118,8 +118,6 @@ class SageLoginMixin(LoginView):
         except User.DoesNotExist:
             user = None
 
-        user_login_failed.send(sender=self.__class__, identifier=identifier)
-
         if user is not None:
             if user.is_block:
                 messages.error(
@@ -139,7 +137,6 @@ class SageLoginMixin(LoginView):
                 user_login_attempt.send(sender=self.__class__, user=user, identifier=identifier, success=False)
                 return super().form_invalid(form)
         else:
-            user_login_failed.send(sender=self.__class__, identifier=identifier)
             return super().form_invalid(form)
 
     def form_valid(self, form):

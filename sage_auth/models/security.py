@@ -18,7 +18,7 @@ class LoginAttempt(TimeStampMixin):
         failed_attempts: Integer tracking the total failed login attempts.
     """
 
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="security",
