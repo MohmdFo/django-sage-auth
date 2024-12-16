@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.db.models import Max
 from django.utils.translation import gettext_lazy as _
 
-from sage_auth.models import SageUser, LoginAttempt, SecurityAnnouncement
+from sage_auth.models import LoginAttempt, SageUser, SecurityAnnouncement
 
 from .utils import set_required_fields
 
@@ -50,6 +51,7 @@ class SageUserAdmin(UserAdmin):
 
     ordering = [username_field]
 
+
 @admin.register(LoginAttempt)
 class LoginAttemptModelAdmin(admin.ModelAdmin):
     """Admin interface for managing LoginAttempt Model entries."""
@@ -74,66 +76,88 @@ class LoginAttemptModelAdmin(admin.ModelAdmin):
         ),
     )
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        latest_attempts = (
+            qs.values("user")
+            .annotate(latest_id=Max("id"))
+            .values_list("latest_id", flat=True)
+        )
+        return qs.filter(id__in=latest_attempts)
+
 
 @admin.register(SecurityAnnouncement)
 class SecurityAnnouncementAdmin(admin.ModelAdmin):
     """
     Admin configuration for the SecurityAnnouncement model.
+
     Provides a user-friendly interface with search, filtering, inline editing,
     and fieldsets for better management of security announcements.
     """
+
     # Display fields in the admin list view
     list_display = (
-        'title', 'group', 'is_active', 'date', 'location',  # Fields to display in the list view
+        "title",
+        "group",
+        "is_active",
+        "date",
+        "location",  # Fields to display in the list view
     )
     # Fields that can be used to search records
     search_fields = (
-        'title', 'subtitle', 'content', 'location',  # Allows text-based search
+        "title",
+        "subtitle",
+        "content",
+        "location",  # Allows text-based search
     )
     # Filters in the sidebar for quick record categorization
     list_filter = (
-        'is_active', 'group', 'date',  # Boolean, choice, and date filters
+        "is_active",
+        "group",
+        "date",  # Boolean, choice, and date filters
     )
     # Fields to make editable directly in the list view
     list_editable = (
-        'is_active', 'group',  # Allows quick activation/deactivation and group assignment
+        "is_active",
+        "group",  # Allows quick activation/deactivation and group assignment
     )
     # Ordering of records
-    ordering = ('-date', 'title')  # Sorts records by descending date and then title
+    ordering = ("-date", "title")  # Sorts records by descending date and then title
     # Prepopulated fields
-    prepopulated_fields = {"subtitle": ("title",)}  # Automatically generate subtitles from titles (optional)
+    prepopulated_fields = {
+        "subtitle": ("title",)
+    }  # Automatically generate subtitles from titles (optional)
     # Fieldsets for organizing the form view
     fieldsets = (
-        ("General Information", {
-            'fields': ('title', 'subtitle', 'content', 'group')
-        }),
-        ("Status and Visibility", {
-            'fields': ('is_active', 'date', 'location')
-        }),
-        ("Call-to-Action Button", {
-            'fields': ('button_text', 'button_link'),
-            'classes': ('collapse',),  # Collapsed by default
-        }),
+        ("General Information", {"fields": ("title", "subtitle", "content", "group")}),
+        ("Status and Visibility", {"fields": ("is_active", "date", "location")}),
+        (
+            "Call-to-Action Button",
+            {
+                "fields": ("button_text", "button_link"),
+                "classes": ("collapse",),  # Collapsed by default
+            },
+        ),
     )
     # Read-only fields
-    readonly_fields = ('date',)  # Example: Prevent editing of date field (optional)
+    readonly_fields = ("date",)  # Example: Prevent editing of date field (optional)
 
     # Decorated custom actions
     @admin.action(description="Mark selected announcements as active")
     def mark_active(self, request, queryset):
-        """
-        Custom action to mark selected announcements as active.
-        """
+        """Custom action to mark selected announcements as active."""
         updated = queryset.update(is_active=True)
-        self.message_user(request, f"{updated} announcement(s) successfully marked as active.")
+        self.message_user(
+            request, f"{updated} announcement(s) successfully marked as active."
+        )
 
     @admin.action(description="Mark selected announcements as inactive")
     def mark_inactive(self, request, queryset):
-        """
-        Custom action to mark selected announcements as inactive.
-        """
+        """Custom action to mark selected announcements as inactive."""
         updated = queryset.update(is_active=False)
-        self.message_user(request, f"{updated} announcement(s) successfully marked as inactive.")
+        self.message_user(
+            request, f"{updated} announcement(s) successfully marked as inactive."
+        )
 
     # Registering the actions
     actions = [mark_active, mark_inactive]
