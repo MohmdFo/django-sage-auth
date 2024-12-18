@@ -9,9 +9,10 @@ from django.shortcuts import redirect
 from django.utils import timezone as tz
 from django.utils.translation import gettext_lazy as _
 from django.views import View
-from sage_otp.helpers.choices import OTPState, ReasonOptions
-from sage_otp.helpers.exceptions import InvalidTokenException, OTPExpiredException
+
+from sage_otp.models import OTP
 from sage_otp.repository.managers.otp import OTPManager
+from sage_otp.helpers.choices import OTPState, ReasonOptions
 
 from sage_auth.models import SageUser
 from sage_auth.utils import get_backends, send_email_otp
@@ -250,7 +251,13 @@ class VerifyOtpMixin(View):
         user.is_active = False
         user.save()
         reason = self.request.session.get("reason")
-        otp_instance = self.otp_manager.get_otp(identifier=user.id, reason=reason)
+        try:
+            otp_instance = self.otp_manager.get_otp(identifier=user.id, reason=reason)
+        except OTP.DoesNotExist as e:
+            messages.error(
+                self.request,
+                _("OTP Token Does not Exist.")
+            )
         otp_instance.state = OTPState.EXPIRED
         otp_instance.save()
         messages.error(
