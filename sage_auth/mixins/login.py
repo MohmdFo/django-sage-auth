@@ -114,8 +114,10 @@ class SageLoginMixin(LoginView):
             user = User.objects.get(**{username_field: identifier})
             if not check_password(password, user.password):
                 user_login_attempt.send(sender=self.__class__, user=user, identifier=identifier, success=False)
+                messages.error(self.request, _("Invalid username or password. Please try again."))
                 return super().form_invalid(form)
         except User.DoesNotExist:
+            messages.error(self.request, _("Invalid username or password. Please try again."))
             user = None
 
         if user is not None:
@@ -138,6 +140,7 @@ class SageLoginMixin(LoginView):
                 return super().form_invalid(form)
         else:
             return super().form_invalid(form)
+
 
     def form_valid(self, form):
         response = super().form_valid(form)
