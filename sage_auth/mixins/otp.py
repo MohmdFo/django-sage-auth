@@ -25,11 +25,9 @@ class VerifyOtpMixin(View):
     Mixin for verifying OTPs in user authentication and reactivation flows.
 
     This mixin provides a secure, reusable structure for OTP verification
-    in Django.
-    views, supporting use cases like email or phone number activation
-    and password recovery.
-    It checks the validity of the OTP, manages failed attempts, and
-    initiates account activation if the OTP is verified successfully
+    in Django views, supporting use cases like email or phone number activation
+    and password recovery. It checks the validity of the OTP, manages failed attempts, and
+    initiates account activation if the OTP is verified successfully.
     """
 
     otp_manager = OTPManager()
@@ -45,13 +43,10 @@ class VerifyOtpMixin(View):
 
     def setup(self, request, *args, **kwargs):
         self.user_identifier = request.session.get("email")
+        logger.debug("Setting up VerifyOtpMixin with user identifier: %s", self.user_identifier)
         return super().setup(request, *args, **kwargs)
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        Check if the user is in the signup process by verifying the session key
-        and ensure request setup before handling the request.
-        """
         user = self.get_user_by_identifier()
         if user.is_block:
             messages.error(
@@ -62,16 +57,16 @@ class VerifyOtpMixin(View):
 
         if not self.reactivate_process:
             if not request.session.get("spa"):
-                logger.warning("Unauthorized access attempt: no active signup session.")
+                logger.warning("Unauthorized access attempt: no active signup session for user identifier: %s", self.user_identifier)
                 messages.error(
                     self.request, _("Unauthorized access detected. Please start the signup process again.")
                 )
                 return redirect(settings.LOGIN_URL)
 
+        logger.info("Dispatching request for user identifier: %s", self.user_identifier)
         return super().dispatch(request, *args, **kwargs)
 
     def verify_otp(self, user_identifier, entered_otp):
-        """Verify OTP and activate the user if it matches."""
         try:
             logger.debug("Verifying OTP for identifier: %s", user_identifier)
             user = self.get_user_by_identifier()
@@ -85,6 +80,7 @@ class VerifyOtpMixin(View):
             time_left_to_expire = (otp_expiry_time - tz.now()).total_seconds()
 
             if time_left_to_expire <= 0:
+                logger.warning("OTP expired for user identifier: %s", user_identifier)
                 otp_instance.update_state(OTPState.EXPIRED)
                 otp_expired.send(sender=self.__class__, user=user, reason=self.reason)
                 messages.error(
@@ -95,6 +91,7 @@ class VerifyOtpMixin(View):
                 return False
 
             if otp_instance.failed_attempts_count >= otp_max:
+                logger.warning("Too many failed OTP attempts for user identifier: %s", user_identifier)
                 otp_failed.send(
                     sender=self.__class__,
                     user=user,
@@ -109,6 +106,7 @@ class VerifyOtpMixin(View):
                 return False
 
             if otp_instance.token == entered_otp:
+                logger.info("OTP verified successfully for user identifier: %s", user_identifier)
                 user.is_active = True
                 otp_instance.state = OTPState.CONSUMED
                 user.save()
@@ -121,6 +119,7 @@ class VerifyOtpMixin(View):
                 )
                 return user
             else:
+                logger.warning("Incorrect OTP entered for user identifier: %s", user_identifier)
                 otp_instance.failed_attempts_count += 1
                 otp_instance.save()
                 otp_failed.send(
@@ -136,15 +135,15 @@ class VerifyOtpMixin(View):
                 return False
 
         except SageUser.DoesNotExist:
+            logger.error("Failed to retrieve user by identifier: %s", user_identifier)
             messages.error(
                 self.request,
                 _("Invalid user identifier. Please try again or restart the process."),
             )
-            logger.error("Failed to retrieve user by identifier: %s", user_identifier)
             return False
 
         except Exception as e:
-            logger.error("OTP verification error: %s", e)
+            logger.exception("Unexpected error during OTP verification for user identifier: %s", user_identifier)
             messages.error(
                 self.request,
                 _("An unexpected error occurred during OTP verification. Please try again later."),
@@ -153,10 +152,10 @@ class VerifyOtpMixin(View):
             return False
 
     def locked_user(self, count):
+        logger.debug("Checking if user identifier %s is locked. Attempt count: %d", self.user_identifier, count)
         return count >= self.lock_user
 
     def handle_locked_user(self):
-        """Handle the scenario when the user is locked out due to too many attempts."""
         lockout_start_time = self.request.session.get("lockout_start_time")
         if lockout_start_time:
             lockout_start_time = tz.datetime.fromisoformat(lockout_start_time)
@@ -166,13 +165,13 @@ class VerifyOtpMixin(View):
             minutes_left = int(time_left // 60)
             seconds_left = int(time_left % 60)
             if time_left > 0:
+                logger.info("User identifier %s is in lockout period. Time left: %d seconds", self.user_identifier, time_left)
                 messages.error(
                     self.request,
-                    _(
-                        f"Too many attempts. Please wait {minutes_left} minutes and {seconds_left} seconds before trying again."
-                    ),
+                    _(f"Too many attempts. Please wait {minutes_left} minutes and {seconds_left} seconds before trying again."),
                 )
             else:
+                logger.info("Lockout period ended for user identifier: %s", self.user_identifier)
                 self.request.session["max_counter"] = 0
                 del self.request.session["lockout_start_time"]
                 messages.info(
@@ -183,10 +182,11 @@ class VerifyOtpMixin(View):
         return self.render_to_response(self.get_context_data())
 
     def post(self, request, *args, **kwargs):
-        """Handle OTP verification through POST requests."""
         count = request.session.get("max_counter", 0)
         block = self.request.session.get("block_count", 0)
+        logger.debug("POST request received for OTP verification. Count: %d, Block: %d", count, block)
         if self.block_count <= block:
+            logger.warning("User identifier %s has been blocked due to too many failed attempts", self.user_identifier)
             self.block_user()
             messages.error(
                 self.request,
@@ -197,36 +197,40 @@ class VerifyOtpMixin(View):
         if not self.locked_user(count):
             request.session["max_counter"] = count + 1
             entered_otp = request.POST.get("verify_code")
+            logger.debug("Verifying OTP for user identifier: %s", self.user_identifier)
             user = self.verify_otp(self.user_identifier, entered_otp)
             if user:
+                logger.info("OTP verification successful for user identifier: %s", self.user_identifier)
                 if self.reason == ReasonOptions.FORGET_PASSWORD:
                     pass
                 else:
                     login(request, user)
                 self.clear_session_keys(["spa", "block_count", "max_counter"])
                 return redirect(self.get_success_url())
+            logger.info("OTP verification failed for user identifier: %s", self.user_identifier)
             return self.render_to_response(self.get_context_data())
         else:
             if not self.request.session.get("lockout_start_time"):
                 request.session["lockout_start_time"] = tz.now().isoformat()
                 request.session["block_count"] = block + 1
+            logger.info("Handling locked user scenario for user identifier: %s", self.user_identifier)
             return self.handle_locked_user()
 
     def get_success_url(self):
-        """Return the success URL if defined, else raise an error."""
         if not self.success_url:
+            logger.error("Success URL is not set for user identifier: %s", self.user_identifier)
             raise ValueError("The success_url attribute is not set.")
+        logger.debug("Redirecting to success URL: %s for user identifier: %s", self.success_url, self.user_identifier)
         return self.success_url
 
     def send_new_otp(self, user):
-        """Send a new OTP to the user's email or phone number based on the
-        identifier.
-        """
+        logger.info("Sending new OTP to user identifier: %s", self.user_identifier)
         if "@" in self.user_identifier:
             otp_data = self.otp_manager.get_or_create_otp(
                 identifier=user.id, reason=self.reason
             )
             send_email_otp(otp_data[0].token, user.email)
+            logger.debug("New OTP sent via email to: %s", user.email)
             messages.info(self.request, _("A new OTP has been sent to your email address."))
         else:
             otp_data = self.otp_manager.get_or_create_otp(
@@ -234,6 +238,7 @@ class VerifyOtpMixin(View):
             )
             sms_obj = get_backends()
             sms_obj.send_one_message(str(user.phone_number), otp_data[0].token)
+            logger.debug("New OTP sent via SMS to: %s", user.phone_number)
             messages.info(
                 self.request,
                 _("A new OTP has been sent to your phone number."),
@@ -243,37 +248,42 @@ class VerifyOtpMixin(View):
         context = kwargs or {}
         context["minutes_left_expiry"] = self.minutes_left_expiry
         context["seconds_left_expiry"] = self.seconds_left_expiry
+        logger.debug("Context data prepared for user identifier: %s", self.user_identifier)
         return context
 
     def block_user(self):
-        """Block the user and remove all OTP instances associated with them."""
         user = self.get_user_by_identifier()
         user.is_block = True
         user.is_active = False
         user.save()
+        logger.warning("User identifier %s has been blocked", self.user_identifier)
         reason = self.request.session.get("reason")
         try:
             otp_instance = self.otp_manager.get_otp(identifier=user.id, reason=reason)
-        except OTP.DoesNotExist as e:
+        except OTP.DoesNotExist:
+            logger.error("Failed to retrieve OTP token for blocking user identifier: %s", self.user_identifier)
             messages.error(
                 self.request,
                 _("OTP Token Does not Exist.")
             )
+            return
         otp_instance.state = OTPState.EXPIRED
         otp_instance.save()
+        logger.debug("All OTP instances for user identifier %s have been expired", self.user_identifier)
         messages.error(
             self.request,
             _("Your account has been blocked due to multiple failed OTP attempts. Please contact support."),
         )
 
     def get_user_by_identifier(self):
-        """Retrieve the user based on their identifier email or phone number."""
         if "@" in self.user_identifier:
+            logger.debug("Retrieving user by email: %s", self.user_identifier)
             return SageUser.objects.get(email=self.user_identifier)
+        logger.debug("Retrieving user by phone number: %s", self.user_identifier)
         return SageUser.objects.get(phone_number=self.user_identifier)
 
     def clear_session_keys(self, keys):
-        """Helper method to clear specified keys from the session."""
         for key in keys:
             if key in self.request.session:
+                logger.debug("Clearing session key: %s", key)
                 del self.request.session[key]
