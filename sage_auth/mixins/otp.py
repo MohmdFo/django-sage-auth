@@ -4,7 +4,6 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
-from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.utils import timezone as tz
 from django.utils.translation import gettext_lazy as _
@@ -59,14 +58,16 @@ class VerifyOtpMixin(View):
                 self.request, _("Your account has been blocked. Please contact support.")
             )
             logger.warning("Blocked user tried to access: %s", user.email or user.phone_number)
-            raise PermissionDenied("You have been blocked")
+            return redirect(settings.LOGIN_URL)
+
         if not self.reactivate_process:
             if not request.session.get("spa"):
                 logger.warning("Unauthorized access attempt: no active signup session.")
                 messages.error(
                     self.request, _("Unauthorized access detected. Please start the signup process again.")
                 )
-                raise PermissionDenied("403 Forbidden")
+                return redirect(settings.LOGIN_URL)
+
         return super().dispatch(request, *args, **kwargs)
 
     def verify_otp(self, user_identifier, entered_otp):
