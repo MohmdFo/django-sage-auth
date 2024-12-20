@@ -10,7 +10,7 @@ from .password import (
 from .phone import PhoneOtpMixin
 from .reactivate import ReactivationMixin
 from .signup import UserCreationMixin
-
+from .resend import ResendMixin
 __all__ = [
     "VerifyOtpMixin",
     "ForgetPasswordMixin",
@@ -24,4 +24,5 @@ __all__ = [
     "PhoneOtpMixin",
     "SageLoginMixin",
     "ActivateAccountMixin",
+    "ResendMixin"
 ]
