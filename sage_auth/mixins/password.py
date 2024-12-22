@@ -43,8 +43,9 @@ class ForgetPasswordMixin(FormView, EmailMixin):
         if user:
             self.request.session["email"] = identifier
             self.send_otp_based_on_strategy(user)
-            self.request.session.save()
             self.request.session["spa"] = True
+            self.request.session["reason"] = ReasonOptions.FORGET_PASSWORD
+            self.request.session.save()
 
             return redirect(self.get_success_url())
         else:

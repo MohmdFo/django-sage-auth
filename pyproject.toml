@@ -5,7 +5,7 @@ requires = [ "poetry-core" ]
 
 [tool.poetry]
 name = "django-sage-auth"
-version = "0.1.23"
+version = "0.1.25"
 description = "A project for handleing authentication processes"
 authors = [ "Radin Ghahremani <radin@sageteam.org>", "Sepehr Akbarzadeh <sepehr@sageteam.org>" ]
 keywords = [ "django", "auth", "sageteam", "django-packages" ]

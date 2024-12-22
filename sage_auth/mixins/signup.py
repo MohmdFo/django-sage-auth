@@ -56,6 +56,7 @@ class UserCreationMixin(CreateView, EmailMixin):
             self.email = self.send_otp_based_on_strategy(user)
             self.request.session["email"] = self.email
             self.request.session["spa"] = True
+            self.request.session["reason"] = ReasonOptions.EMAIL_ACTIVATION
             self.request.session.save()
 
         elif settings.USER_ACCOUNT_ACTIVATION_ENABLED:
